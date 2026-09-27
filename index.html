@@ -1,1 +1,878 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>IDENTIS | AI Identity & Document Screening</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+</head>
+
+<body>
+
+    <!-- Background -->
+    <div class="background-grid"></div>
+    <div class="glow glow-one"></div>
+    <div class="glow glow-two"></div>
+
+    <!-- ================= NAVBAR ================= -->
+
+    <header class="navbar">
+
+        <div class="brand">
+            <div class="brand-icon">
+                <span>◆</span>
+            </div>
+
+            <div>
+                <h1>IDENTIS</h1>
+                <small>AI IDENTITY SCREENING</small>
+            </div>
+        </div>
+
+        <nav>
+            <a href="#home" class="active">HOME</a>
+            <a href="#screening">SCREENING</a>
+            <a href="#how-it-works">HOW IT WORKS</a>
+            <a href="#technology">TECHNOLOGY</a>
+            <a href="#impact">IMPACT</a>
+        </nav>
+
+        <div class="system-status">
+            <span class="status-dot"></span>
+            SYSTEM ONLINE
+        </div>
+
+    </header>
+
+
+    <!-- ================= HERO ================= -->
+
+    <main>
+
+        <section id="home" class="hero">
+
+            <div class="hero-content">
+
+                <div class="eyebrow">
+                    <span>●</span>
+                    SMART INDIA HACKATHON 2026
+                </div>
+
+                <h2>
+                    AI-POWERED
+                    <span>IDENTITY</span>
+                    & DOCUMENT
+                    <span>SCREENING</span>
+                </h2>
+
+                <p>
+                    A smart screening platform designed to analyze identity
+                    documents, detect suspicious patterns, and generate
+                    risk-based verification results.
+                </p>
+
+                <div class="hero-buttons">
+
+                    <a href="#screening" class="btn btn-primary">
+                        START VERIFICATION
+                        <span>→</span>
+                    </a>
+
+                    <a href="#how-it-works" class="btn btn-secondary">
+                        HOW IT WORKS
+                    </a>
+
+                </div>
+
+                <div class="hero-meta">
+
+                    <div>
+                        <strong>AI</strong>
+                        <span>POWERED ANALYSIS</span>
+                    </div>
+
+                    <div>
+                        <strong>OCR</strong>
+                        <span>DATA EXTRACTION</span>
+                    </div>
+
+                    <div>
+                        <strong>RISK</strong>
+                        <span>BASED SCREENING</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- AI Visual -->
+
+            <div class="hero-visual">
+
+                <div class="scanner-orbit orbit-one"></div>
+                <div class="scanner-orbit orbit-two"></div>
+
+                <div class="ai-core">
+
+                    <div class="core-ring ring-one"></div>
+                    <div class="core-ring ring-two"></div>
+
+                    <div class="core-center">
+                        <span>AI</span>
+                    </div>
+
+                </div>
+
+                <div class="floating-card card-top">
+                    <span class="mini-icon">⌁</span>
+                    <div>
+                        <small>AI ENGINE</small>
+                        <strong>READY</strong>
+                    </div>
+                </div>
+
+                <div class="floating-card card-bottom">
+                    <span class="mini-icon">✓</span>
+                    <div>
+                        <small>SECURITY</small>
+                        <strong>ACTIVE</strong>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= SCREENING ================= -->
+
+        <section id="screening" class="section screening-section">
+
+            <div class="section-heading">
+
+                <div class="section-tag">
+                    01 / DOCUMENT SCREENING
+                </div>
+
+                <h2>
+                    VERIFY YOUR
+                    <span>DOCUMENT</span>
+                </h2>
+
+                <p>
+                    Upload a document and initiate AI-powered preliminary
+                    screening.
+                </p>
+
+            </div>
+
+
+            <div class="screening-container">
+
+                <!-- Upload -->
+
+                <div class="upload-panel">
+
+                    <div class="panel-header">
+                        <div>
+                            <small>DOCUMENT INPUT</small>
+                            <h3>Upload Document</h3>
+                        </div>
+
+                        <span class="panel-number">01</span>
+                    </div>
+
+
+                    <label for="documentInput" class="upload-box">
+
+                        <div class="upload-icon">
+                            ↑
+                        </div>
+
+                        <h4>DROP DOCUMENT HERE</h4>
+
+                        <p>
+                            or click to browse your device
+                        </p>
+
+                        <span>
+                            PDF • JPG • JPEG • PNG
+                        </span>
+
+                        <input
+                            type="file"
+                            id="documentInput"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                        >
+
+                    </label>
+
+
+                    <div id="fileInfo" class="file-info hidden">
+
+                        <div class="file-symbol">
+                            FILE
+                        </div>
+
+                        <div class="file-details">
+                            <strong id="fileName">
+                                document.pdf
+                            </strong>
+
+                            <small id="fileSize">
+                                0 KB
+                            </small>
+                        </div>
+
+                        <button id="removeFile" type="button">
+                            ×
+                        </button>
+
+                    </div>
+
+
+                    <button
+                        id="analyzeBtn"
+                        class="btn btn-primary analyze-btn"
+                        disabled
+                    >
+                        ANALYZE DOCUMENT
+                        <span>→</span>
+                    </button>
+
+                </div>
+
+
+                <!-- Analysis -->
+
+                <div class="analysis-panel">
+
+                    <div class="panel-header">
+
+                        <div>
+                            <small>SCREENING ENGINE</small>
+                            <h3>AI Analysis</h3>
+                        </div>
+
+                        <span class="live-badge">
+                            LIVE
+                        </span>
+
+                    </div>
+
+
+                    <div class="analysis-display">
+
+                        <div class="scan-circle">
+
+                            <div class="scan-line"></div>
+
+                            <div class="scan-center">
+                                <span id="scanPercentage">
+                                    0%
+                                </span>
+
+                                <small>
+                                    READY
+                                </small>
+                            </div>
+
+                        </div>
+
+
+                        <div class="analysis-status">
+
+                            <div class="status-row">
+                                <span>DOCUMENT STATUS</span>
+                                <strong id="documentStatus">
+                                    WAITING
+                                </strong>
+                            </div>
+
+                            <div class="status-row">
+                                <span>OCR EXTRACTION</span>
+                                <strong id="ocrStatus">
+                                    PENDING
+                                </strong>
+                            </div>
+
+                            <div class="status-row">
+                                <span>RISK ANALYSIS</span>
+                                <strong id="riskStatus">
+                                    PENDING
+                                </strong>
+                            </div>
+
+                            <div class="status-row">
+                                <span>FINAL RESULT</span>
+                                <strong id="finalStatus">
+                                    PENDING
+                                </strong>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- Result -->
+
+            <div id="resultPanel" class="result-panel hidden">
+
+                <div class="result-header">
+
+                    <div>
+                        <small>SCREENING COMPLETE</small>
+                        <h3>Verification Result</h3>
+                    </div>
+
+                    <div id="riskBadge" class="risk-badge">
+                        LOW RISK
+                    </div>
+
+                </div>
+
+
+                <div class="result-grid">
+
+                    <div class="risk-score">
+
+                        <span>RISK SCORE</span>
+
+                        <strong id="riskScore">
+                            0
+                        </strong>
+
+                        <small>
+                            OUT OF 100
+                        </small>
+
+                    </div>
+
+
+                    <div class="result-details">
+
+                        <div class="result-item">
+                            <span>DOCUMENT</span>
+                            <strong id="resultFile">
+                                —
+                            </strong>
+                        </div>
+
+                        <div class="result-item">
+                            <span>OCR STATUS</span>
+                            <strong>
+                                VERIFIED
+                            </strong>
+                        </div>
+
+                        <div class="result-item">
+                            <span>AI SCREENING</span>
+                            <strong>
+                                COMPLETED
+                            </strong>
+                        </div>
+
+                        <div class="result-item">
+                            <span>RECOMMENDATION</span>
+                            <strong id="recommendation">
+                                —
+                            </strong>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="findings">
+
+                    <h4>
+                        SCREENING FINDINGS
+                    </h4>
+
+                    <ul id="findingsList">
+                        <li>
+                            Waiting for analysis...
+                        </li>
+                    </ul>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= HOW IT WORKS ================= -->
+
+        <section id="how-it-works" class="section">
+
+            <div class="section-heading">
+
+                <div class="section-tag">
+                    02 / WORKFLOW
+                </div>
+
+                <h2>
+                    HOW <span>IDENTIS</span> WORKS
+                </h2>
+
+                <p>
+                    A simple multi-stage screening workflow.
+                </p>
+
+            </div>
+
+
+            <div class="workflow">
+
+                <div class="workflow-line"></div>
+
+                <div class="workflow-step">
+
+                    <div class="step-number">01</div>
+
+                    <div class="step-icon">↑</div>
+
+                    <h3>UPLOAD</h3>
+
+                    <p>
+                        Candidate uploads the required identity document.
+                    </p>
+
+                </div>
+
+
+                <div class="workflow-step">
+
+                    <div class="step-number">02</div>
+
+                    <div class="step-icon">◎</div>
+
+                    <h3>OCR EXTRACTION</h3>
+
+                    <p>
+                        Important information is extracted from the document.
+                    </p>
+
+                </div>
+
+
+                <div class="workflow-step">
+
+                    <div class="step-number">03</div>
+
+                    <div class="step-icon">AI</div>
+
+                    <h3>AI SCREENING</h3>
+
+                    <p>
+                        AI analyzes document information and suspicious patterns.
+                    </p>
+
+                </div>
+
+
+                <div class="workflow-step">
+
+                    <div class="step-number">04</div>
+
+                    <div class="step-icon">!</div>
+
+                    <h3>RISK ANALYSIS</h3>
+
+                    <p>
+                        Inconsistencies and potential risk indicators are analyzed.
+                    </p>
+
+                </div>
+
+
+                <div class="workflow-step">
+
+                    <div class="step-number">05</div>
+
+                    <div class="step-icon">✓</div>
+
+                    <h3>RESULT</h3>
+
+                    <p>
+                        A preliminary risk-based screening result is generated.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= TECHNOLOGY ================= -->
+
+        <section id="technology" class="section technology-section">
+
+            <div class="section-heading">
+
+                <div class="section-tag">
+                    03 / TECHNOLOGY STACK
+                </div>
+
+                <h2>
+                    BUILT WITH
+                    <span>SMART TECHNOLOGY</span>
+                </h2>
+
+            </div>
+
+
+            <div class="tech-grid">
+
+                <div class="tech-card">
+
+                    <span class="tech-number">01</span>
+
+                    <div class="tech-icon">
+                        &lt;/&gt;
+                    </div>
+
+                    <h3>FRONTEND</h3>
+
+                    <p>
+                        HTML, CSS, JavaScript / React
+                    </p>
+
+                </div>
+
+
+                <div class="tech-card">
+
+                    <span class="tech-number">02</span>
+
+                    <div class="tech-icon">
+                        PY
+                    </div>
+
+                    <h3>BACKEND</h3>
+
+                    <p>
+                        Python, Flask / FastAPI
+                    </p>
+
+                </div>
+
+
+                <div class="tech-card">
+
+                    <span class="tech-number">03</span>
+
+                    <div class="tech-icon">
+                        AI
+                    </div>
+
+                    <h3>AI / ML</h3>
+
+                    <p>
+                        Python, OpenCV & Machine Learning
+                    </p>
+
+                </div>
+
+
+                <div class="tech-card">
+
+                    <span class="tech-number">04</span>
+
+                    <div class="tech-icon">
+                        OCR
+                    </div>
+
+                    <h3>OCR</h3>
+
+                    <p>
+                        Tesseract OCR / EasyOCR
+                    </p>
+
+                </div>
+
+
+                <div class="tech-card">
+
+                    <span class="tech-number">05</span>
+
+                    <div class="tech-icon">
+                        DB
+                    </div>
+
+                    <h3>DATABASE</h3>
+
+                    <p>
+                        MySQL / MongoDB
+                    </p>
+
+                </div>
+
+
+                <div class="tech-card">
+
+                    <span class="tech-number">06</span>
+
+                    <div class="tech-icon">
+                        🔐
+                    </div>
+
+                    <h3>SECURITY</h3>
+
+                    <p>
+                        Encryption, role-based access & secure document handling
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= FEASIBILITY ================= -->
+
+        <section class="section feasibility-section">
+
+            <div class="section-heading">
+
+                <div class="section-tag">
+                    04 / FEASIBILITY
+                </div>
+
+                <h2>
+                    PRACTICAL &
+                    <span>SCALABLE</span>
+                </h2>
+
+            </div>
+
+
+            <div class="feasibility-grid">
+
+                <div class="feasibility-card">
+
+                    <div class="large-icon">✓</div>
+
+                    <h3>FEASIBLE</h3>
+
+                    <p>
+                        The proposed system can be implemented using existing
+                        AI, OCR, computer vision and web technologies.
+                    </p>
+
+                </div>
+
+
+                <div class="feasibility-card warning-card">
+
+                    <div class="large-icon">!</div>
+
+                    <h3>CHALLENGES</h3>
+
+                    <ul>
+                        <li>Poor-quality images</li>
+                        <li>Incomplete documents</li>
+                        <li>Different document formats</li>
+                        <li>False positives</li>
+                    </ul>
+
+                </div>
+
+
+                <div class="feasibility-card">
+
+                    <div class="large-icon">⚙</div>
+
+                    <h3>SOLUTIONS</h3>
+
+                    <ul>
+                        <li>Image enhancement</li>
+                        <li>Multiple validation layers</li>
+                        <li>Configurable rules</li>
+                        <li>Human verification for high-risk cases</li>
+                    </ul>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= IMPACT ================= -->
+
+        <section id="impact" class="section impact-section">
+
+            <div class="section-heading">
+
+                <div class="section-tag">
+                    05 / IMPACT
+                </div>
+
+                <h2>
+                    WHY IT
+                    <span>MATTERS</span>
+                </h2>
+
+            </div>
+
+
+            <div class="impact-grid">
+
+                <div class="impact-card">
+                    <span>01</span>
+                    <h3>FASTER VERIFICATION</h3>
+                    <p>
+                        Reduces the time required for preliminary identity
+                        and document screening.
+                    </p>
+                </div>
+
+                <div class="impact-card">
+                    <span>02</span>
+                    <h3>FRAUD DETECTION</h3>
+                    <p>
+                        Helps identify potentially forged, tampered,
+                        or suspicious documents.
+                    </p>
+                </div>
+
+                <div class="impact-card">
+                    <span>03</span>
+                    <h3>REDUCED MANUAL EFFORT</h3>
+                    <p>
+                        Automates repetitive document checking
+                        and data extraction.
+                    </p>
+                </div>
+
+                <div class="impact-card">
+                    <span>04</span>
+                    <h3>IMPROVED ACCURACY</h3>
+                    <p>
+                        AI-based checks can detect inconsistencies
+                        that may be missed during manual screening.
+                    </p>
+                </div>
+
+                <div class="impact-card">
+                    <span>05</span>
+                    <h3>COST EFFECTIVE</h3>
+                    <p>
+                        Reduces operational effort and improves
+                        verification team efficiency.
+                    </p>
+                </div>
+
+                <div class="impact-card">
+                    <span>06</span>
+                    <h3>SCALABLE SOLUTION</h3>
+                    <p>
+                        Can be adapted for different departments,
+                        organizations and document types.
+                    </p>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= CTA ================= -->
+
+        <section class="cta-section">
+
+            <div class="cta-content">
+
+                <span class="section-tag">
+                    SECURE • ANALYZE • VERIFY
+                </span>
+
+                <h2>
+                    START YOUR
+                    <span>VERIFICATION</span>
+                </h2>
+
+                <p>
+                    Use AI-powered screening to perform a preliminary
+                    analysis of identity documents.
+                </p>
+
+                <a href="#screening" class="btn btn-primary">
+                    START SCREENING
+                    <span>→</span>
+                </a>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- ================= FOOTER ================= -->
+
+    <footer>
+
+        <div class="footer-brand">
+
+            <strong>IDENTIS</strong>
+
+            <span>
+                AI Identity & Document Screening System
+            </span>
+
+        </div>
+
+        <div class="footer-info">
+
+            <span>
+                SMART INDIA HACKATHON 2026
+            </span>
+
+            <span>
+                PS ID: SIH 26188
+            </span>
+
+        </div>
+
+        <div class="footer-bottom">
+
+            <p>
+                © 2026 IDENTIS. AI-powered preliminary document screening.
+            </p>
+
+            <span>
+                SYSTEM STATUS: <b>ONLINE</b>
+            </span>
+
+        </div>
+
+    </footer>
+
+
+    <script src="script.js"></script>
+
+</body>
+</html>

@@ -1,2051 +1,664 @@
-
 /* =========================================================
    IDENTIS — AI IDENTITY & DOCUMENT SCREENING SYSTEM
-   PREMIUM CYBER / AI INTERFACE
+   FRONTEND SCREENING ENGINE
 ========================================================= */
 
-:root {
-    --bg-main: #050914;
-    --bg-secondary: #08111f;
-    --bg-card: rgba(10, 22, 39, 0.78);
-    --bg-card-strong: rgba(8, 18, 33, 0.94);
+"use strict";
 
-    --primary: #00d9ff;
-    --primary-soft: rgba(0, 217, 255, 0.15);
-    --secondary: #4777ff;
+/* =========================================================
+   ELEMENTS
+========================================================= */
 
-    --text-main: #f3f8ff;
-    --text-soft: #91a5bd;
-    --text-muted: #60748c;
+const documentInput = document.getElementById("documentInput");
+const uploadBox = document.querySelector(".upload-box");
 
-    --success: #25e69a;
-    --warning: #ffc857;
-    --danger: #ff5577;
+const fileInfo = document.getElementById("fileInfo");
+const fileName = document.getElementById("fileName");
+const fileSize = document.getElementById("fileSize");
+const removeFile = document.getElementById("removeFile");
 
-    --border: rgba(0, 217, 255, 0.16);
-    --border-bright: rgba(0, 217, 255, 0.38);
+const analyzeBtn = document.getElementById("analyzeBtn");
 
-    --shadow:
-        0 20px 70px rgba(0, 0, 0, 0.38);
+const scanPercentage = document.getElementById("scanPercentage");
+const documentStatus = document.getElementById("documentStatus");
+const ocrStatus = document.getElementById("ocrStatus");
+const riskStatus = document.getElementById("riskStatus");
+const finalStatus = document.getElementById("finalStatus");
 
-    --radius: 18px;
-    --transition: 0.3s ease;
+const resultPanel = document.getElementById("resultPanel");
+const riskBadge = document.getElementById("riskBadge");
+const riskScore = document.getElementById("riskScore");
+
+const resultFile = document.getElementById("resultFile");
+const recommendation = document.getElementById("recommendation");
+const findingsList = document.getElementById("findingsList");
+
+let selectedFile = null;
+let scanTimer = null;
+
+
+/* =========================================================
+   INITIAL STATE
+========================================================= */
+
+function resetAnalysis() {
+
+    scanPercentage.textContent = "0%";
+
+    documentStatus.textContent = "WAITING";
+    ocrStatus.textContent = "PENDING";
+    riskStatus.textContent = "PENDING";
+    finalStatus.textContent = "PENDING";
+
+    resultPanel.classList.add("hidden");
+
+    riskBadge.textContent = "LOW RISK";
+    riskBadge.style.color = "";
+    riskBadge.style.borderColor = "";
+    riskBadge.style.background = "";
+
+    riskScore.textContent = "0";
+    riskScore.style.color = "";
+
+    resultFile.textContent = "—";
+    recommendation.textContent = "—";
+
+    findingsList.innerHTML = `
+        <li>Waiting for analysis...</li>
+    `;
 }
 
 
 /* =========================================================
-   RESET
+   FILE SIZE FORMAT
 ========================================================= */
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+function formatFileSize(bytes) {
 
-html {
-    scroll-behavior: smooth;
-}
+    if (bytes < 1024) {
+        return `${bytes} B`;
+    }
 
-body {
-    min-height: 100vh;
-    background:
-        radial-gradient(
-            circle at 15% 10%,
-            rgba(0, 217, 255, 0.08),
-            transparent 28%
-        ),
-        radial-gradient(
-            circle at 85% 20%,
-            rgba(71, 119, 255, 0.08),
-            transparent 30%
-        ),
-        var(--bg-main);
+    if (bytes < 1024 * 1024) {
+        return `${(bytes / 1024).toFixed(1)} KB`;
+    }
 
-    color: var(--text-main);
-    font-family: "Inter", sans-serif;
-    overflow-x: hidden;
-}
-
-a {
-    color: inherit;
-    text-decoration: none;
-}
-
-button,
-input {
-    font-family: inherit;
-}
-
-button {
-    border: none;
-}
-
-::selection {
-    background: rgba(0, 217, 255, 0.25);
-    color: #ffffff;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
 
 /* =========================================================
-   BACKGROUND
+   FILE VALIDATION
 ========================================================= */
 
-.background-grid {
-    position: fixed;
-    inset: 0;
-    z-index: -5;
-    pointer-events: none;
+function isValidFile(file) {
 
-    background-image:
-        linear-gradient(
-            rgba(0, 217, 255, 0.035) 1px,
-            transparent 1px
-        ),
-        linear-gradient(
-            90deg,
-            rgba(0, 217, 255, 0.035) 1px,
-            transparent 1px
-        );
+    const allowedTypes = [
+        "application/pdf",
+        "image/jpeg",
+        "image/jpg",
+        "image/png"
+    ];
 
-    background-size: 55px 55px;
+    const allowedExtensions = [
+        ".pdf",
+        ".jpg",
+        ".jpeg",
+        ".png"
+    ];
 
-    mask-image: linear-gradient(
-        to bottom,
-        black,
-        rgba(0, 0, 0, 0.7),
-        transparent
+    const extension = "." + file.name.split(".").pop().toLowerCase();
+
+    return (
+        allowedTypes.includes(file.type) ||
+        allowedExtensions.includes(extension)
     );
 }
 
-.glow {
-    position: fixed;
-    width: 450px;
-    height: 450px;
-    border-radius: 50%;
-    filter: blur(100px);
-    pointer-events: none;
-    z-index: -4;
-    opacity: 0.16;
-}
-
-.glow-one {
-    background: var(--primary);
-    top: -200px;
-    left: -180px;
-}
-
-.glow-two {
-    background: var(--secondary);
-    right: -200px;
-    top: 35%;
-}
-
 
 /* =========================================================
-   NAVBAR
+   DISPLAY SELECTED FILE
 ========================================================= */
 
-.navbar {
-    position: sticky;
-    top: 0;
-    z-index: 1000;
+function handleFile(file) {
 
-    min-height: 78px;
-    padding: 14px 5%;
+    if (!file) {
+        return;
+    }
 
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 30px;
+    if (!isValidFile(file)) {
 
-    background: rgba(4, 10, 20, 0.78);
-    border-bottom: 1px solid rgba(0, 217, 255, 0.1);
-
-    backdrop-filter: blur(22px);
-    -webkit-backdrop-filter: blur(22px);
-}
-
-.brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-width: 220px;
-}
-
-.brand-icon {
-    width: 42px;
-    height: 42px;
-
-    display: grid;
-    place-items: center;
-
-    color: var(--primary);
-
-    border: 1px solid var(--border-bright);
-    border-radius: 12px;
-
-    background:
-        linear-gradient(
-            135deg,
-            rgba(0, 217, 255, 0.16),
-            rgba(71, 119, 255, 0.08)
+        alert(
+            "Invalid document format.\n\nPlease upload PDF, JPG, JPEG or PNG."
         );
 
-    box-shadow:
-        0 0 25px rgba(0, 217, 255, 0.12),
-        inset 0 0 18px rgba(0, 217, 255, 0.05);
+        return;
+    }
 
-    animation: iconPulse 3s infinite ease-in-out;
-}
+    selectedFile = file;
 
-.brand-icon span {
-    font-size: 16px;
-}
+    fileName.textContent = file.name;
+    fileSize.textContent = formatFileSize(file.size);
 
-.brand h1 {
-    font-family: "Orbitron", sans-serif;
-    font-size: 18px;
-    letter-spacing: 2px;
-}
+    fileInfo.classList.remove("hidden");
 
-.brand small {
-    display: block;
-    margin-top: 2px;
+    analyzeBtn.disabled = false;
 
-    color: var(--text-muted);
+    documentStatus.textContent = "READY";
 
-    font-size: 8px;
-    letter-spacing: 1.8px;
-}
+    resetAnalysis();
 
-.navbar nav {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-}
-
-.navbar nav a {
-    position: relative;
-
-    padding: 9px 12px;
-
-    color: var(--text-soft);
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.8px;
-
-    transition: var(--transition);
-}
-
-.navbar nav a::after {
-    content: "";
-
-    position: absolute;
-    left: 50%;
-    bottom: 0;
-
-    width: 0;
-    height: 2px;
-
-    background: var(--primary);
-    box-shadow: 0 0 12px var(--primary);
-
-    transform: translateX(-50%);
-
-    transition: width 0.3s ease;
-}
-
-.navbar nav a:hover,
-.navbar nav a.active {
-    color: #ffffff;
-}
-
-.navbar nav a:hover::after,
-.navbar nav a.active::after {
-    width: 65%;
-}
-
-.system-status {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-
-    padding: 9px 12px;
-
-    border: 1px solid rgba(37, 230, 154, 0.18);
-    border-radius: 999px;
-
-    background: rgba(37, 230, 154, 0.05);
-
-    color: var(--success);
-
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 1px;
-
-    white-space: nowrap;
-}
-
-.status-dot {
-    width: 7px;
-    height: 7px;
-
-    border-radius: 50%;
-    background: var(--success);
-
-    box-shadow: 0 0 12px var(--success);
-
-    animation: statusBlink 1.5s infinite;
+    documentStatus.textContent = "READY";
 }
 
 
 /* =========================================================
-   HERO
+   FILE INPUT
 ========================================================= */
 
-.hero {
-    min-height: calc(100vh - 78px);
-    padding: 80px 7% 100px;
+documentInput.addEventListener("change", function () {
 
-    display: grid;
-    grid-template-columns: 1.05fr 0.95fr;
-    align-items: center;
-    gap: 50px;
-}
+    const file = this.files[0];
 
-.hero-content {
-    max-width: 760px;
-}
-
-.eyebrow {
-    width: fit-content;
-
-    display: flex;
-    align-items: center;
-    gap: 9px;
-
-    margin-bottom: 22px;
-    padding: 8px 13px;
-
-    border: 1px solid var(--border);
-    border-radius: 999px;
-
-    background: rgba(0, 217, 255, 0.045);
-
-    color: var(--primary);
-
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 1.6px;
-}
-
-.eyebrow span {
-    animation: statusBlink 1.2s infinite;
-}
-
-.hero h2 {
-    max-width: 800px;
-
-    font-family: "Orbitron", sans-serif;
-    font-size: clamp(38px, 5.2vw, 74px);
-    line-height: 1.08;
-    letter-spacing: -2px;
-}
-
-.hero h2 span {
-    color: var(--primary);
-
-    text-shadow:
-        0 0 25px rgba(0, 217, 255, 0.3);
-}
-
-.hero-content > p {
-    max-width: 670px;
-    margin: 26px 0 32px;
-
-    color: var(--text-soft);
-    font-size: 15px;
-    line-height: 1.8;
-}
-
-.hero-buttons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 13px;
-}
-
-.btn {
-    min-height: 48px;
-
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-
-    padding: 0 22px;
-
-    border-radius: 10px;
-
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 1.1px;
-
-    cursor: pointer;
-
-    transition:
-        transform 0.3s ease,
-        box-shadow 0.3s ease,
-        border-color 0.3s ease;
-}
-
-.btn:hover {
-    transform: translateY(-3px);
-}
-
-.btn-primary {
-    color: #031019;
-
-    background: linear-gradient(
-        135deg,
-        #00e5ff,
-        #35aaff
-    );
-
-    box-shadow:
-        0 10px 35px rgba(0, 217, 255, 0.18);
-}
-
-.btn-primary:hover {
-    box-shadow:
-        0 15px 45px rgba(0, 217, 255, 0.32);
-}
-
-.btn-secondary {
-    color: var(--text-main);
-
-    border: 1px solid var(--border-bright);
-
-    background: rgba(0, 217, 255, 0.045);
-}
-
-.btn-secondary:hover {
-    border-color: var(--primary);
-    background: rgba(0, 217, 255, 0.09);
-}
-
-.hero-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 35px;
-
-    margin-top: 55px;
-}
-
-.hero-meta div {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.hero-meta strong {
-    color: var(--primary);
-
-    font-family: "Orbitron", sans-serif;
-    font-size: 18px;
-}
-
-.hero-meta span {
-    color: var(--text-muted);
-
-    font-size: 8px;
-    letter-spacing: 1.4px;
-}
+    handleFile(file);
+});
 
 
 /* =========================================================
-   HERO AI VISUAL
+   REMOVE FILE
 ========================================================= */
 
-.hero-visual {
-    position: relative;
+removeFile.addEventListener("click", function () {
 
-    min-height: 510px;
+    selectedFile = null;
 
-    display: grid;
-    place-items: center;
-}
+    documentInput.value = "";
 
-.ai-core {
-    position: relative;
+    fileInfo.classList.add("hidden");
 
-    width: 260px;
-    height: 260px;
+    analyzeBtn.disabled = true;
 
-    display: grid;
-    place-items: center;
-}
+    resetAnalysis();
+});
 
-.core-center {
-    width: 120px;
-    height: 120px;
 
-    display: grid;
-    place-items: center;
+/* =========================================================
+   DRAG & DROP
+========================================================= */
 
-    border-radius: 50%;
+uploadBox.addEventListener("dragover", function (event) {
 
-    background:
-        radial-gradient(
-            circle,
-            rgba(0, 217, 255, 0.3),
-            rgba(0, 217, 255, 0.04) 65%,
-            transparent 70%
+    event.preventDefault();
+
+    uploadBox.classList.add("drag-over");
+});
+
+
+uploadBox.addEventListener("dragleave", function () {
+
+    uploadBox.classList.remove("drag-over");
+});
+
+
+uploadBox.addEventListener("drop", function (event) {
+
+    event.preventDefault();
+
+    uploadBox.classList.remove("drag-over");
+
+    const file = event.dataTransfer.files[0];
+
+    if (!file) {
+        return;
+    }
+
+    handleFile(file);
+
+    /*
+       Synchronize the file input so the selected
+       document can also be accessed normally.
+    */
+
+    try {
+
+        const dataTransfer = new DataTransfer();
+
+        dataTransfer.items.add(file);
+
+        documentInput.files = dataTransfer.files;
+
+    } catch (error) {
+
+        console.log(
+            "Browser does not allow direct file input synchronization."
         );
-
-    border: 1px solid rgba(0, 217, 255, 0.55);
-
-    box-shadow:
-        0 0 35px rgba(0, 217, 255, 0.22),
-        inset 0 0 30px rgba(0, 217, 255, 0.12);
-
-    z-index: 3;
-}
-
-.core-center span {
-    font-family: "Orbitron", sans-serif;
-    font-size: 28px;
-    font-weight: 800;
-    color: var(--primary);
-
-    text-shadow:
-        0 0 25px rgba(0, 217, 255, 0.6);
-}
-
-.core-ring {
-    position: absolute;
-
-    border: 1px solid rgba(0, 217, 255, 0.35);
-    border-radius: 50%;
-}
-
-.ring-one {
-    inset: 12px;
-
-    border-left-color: transparent;
-    border-right-color: transparent;
-
-    animation: rotateRing 7s linear infinite;
-}
-
-.ring-two {
-    inset: -20px;
-
-    border-top-color: transparent;
-    border-bottom-color: transparent;
-
-    animation: rotateRingReverse 10s linear infinite;
-}
-
-.scanner-orbit {
-    position: absolute;
-
-    border: 1px dashed rgba(0, 217, 255, 0.15);
-    border-radius: 50%;
-}
-
-.orbit-one {
-    width: 370px;
-    height: 370px;
-
-    animation: rotateRing 20s linear infinite;
-}
-
-.orbit-two {
-    width: 470px;
-    height: 470px;
-
-    border-color: rgba(71, 119, 255, 0.1);
-
-    animation: rotateRingReverse 28s linear infinite;
-}
-
-.floating-card {
-    position: absolute;
-
-    min-width: 170px;
-
-    display: flex;
-    align-items: center;
-    gap: 11px;
-
-    padding: 13px 15px;
-
-    border: 1px solid var(--border);
-    border-radius: 12px;
-
-    background: rgba(7, 17, 30, 0.8);
-
-    backdrop-filter: blur(15px);
-
-    box-shadow: var(--shadow);
-}
-
-.card-top {
-    top: 65px;
-    right: 5%;
-    animation: floatCard 4s infinite ease-in-out;
-}
-
-.card-bottom {
-    bottom: 70px;
-    left: 2%;
-    animation: floatCard 4s 1.2s infinite ease-in-out;
-}
-
-.mini-icon {
-    width: 32px;
-    height: 32px;
-
-    display: grid;
-    place-items: center;
-
-    border-radius: 9px;
-
-    color: var(--primary);
-
-    background: rgba(0, 217, 255, 0.08);
-
-    font-size: 14px;
-}
-
-.floating-card small {
-    display: block;
-
-    color: var(--text-muted);
-
-    font-size: 7px;
-    letter-spacing: 1px;
-}
-
-.floating-card strong {
-    display: block;
-    margin-top: 4px;
-
-    color: var(--success);
-
-    font-family: "Orbitron", sans-serif;
-    font-size: 10px;
-}
+    }
+});
 
 
 /* =========================================================
-   SECTIONS
+   ANALYSIS ENGINE
 ========================================================= */
 
-.section {
-    position: relative;
-
-    padding: 110px 7%;
-}
-
-.section-heading {
-    max-width: 800px;
-    margin-bottom: 50px;
-}
-
-.section-tag {
-    margin-bottom: 12px;
-
-    color: var(--primary);
-
-    font-size: 9px;
-    font-weight: 800;
-    letter-spacing: 1.8px;
-}
-
-.section-heading h2 {
-    font-family: "Orbitron", sans-serif;
-
-    font-size: clamp(28px, 4vw, 48px);
-    line-height: 1.15;
-}
-
-.section-heading h2 span {
-    color: var(--primary);
-}
-
-.section-heading p {
-    margin-top: 15px;
-
-    color: var(--text-soft);
-    font-size: 14px;
-    line-height: 1.7;
-}
-
-
-/* =========================================================
-   SCREENING
-========================================================= */
-
-.screening-section {
-    background:
-        linear-gradient(
-            180deg,
-            transparent,
-            rgba(0, 217, 255, 0.018),
-            transparent
-        );
-}
-
-.screening-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 22px;
-}
-
-.upload-panel,
-.analysis-panel,
-.result-panel {
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-
-    background: var(--bg-card);
-
-    backdrop-filter: blur(20px);
-
-    box-shadow: var(--shadow);
-}
-
-.upload-panel,
-.analysis-panel {
-    padding: 25px;
-}
-
-.panel-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 20px;
-
-    margin-bottom: 25px;
-}
-
-.panel-header small {
-    color: var(--primary);
-
-    font-size: 8px;
-    font-weight: 800;
-    letter-spacing: 1.4px;
-}
-
-.panel-header h3 {
-    margin-top: 5px;
-
-    font-family: "Orbitron", sans-serif;
-    font-size: 19px;
-}
-
-.panel-number {
-    color: var(--text-muted);
-
-    font-family: "Orbitron", sans-serif;
-    font-size: 12px;
-}
-
-.live-badge {
-    padding: 6px 9px;
-
-    border: 1px solid rgba(37, 230, 154, 0.25);
-    border-radius: 6px;
-
-    background: rgba(37, 230, 154, 0.07);
-
-    color: var(--success);
-
-    font-size: 8px;
-    font-weight: 800;
-    letter-spacing: 1px;
-}
-
-.upload-box {
-    min-height: 270px;
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-
-    padding: 30px;
-
-    border: 1px dashed rgba(0, 217, 255, 0.28);
-    border-radius: 14px;
-
-    background:
-        radial-gradient(
-            circle,
-            rgba(0, 217, 255, 0.06),
-            transparent 65%
-        );
-
-    text-align: center;
-
-    cursor: pointer;
-
-    transition: var(--transition);
-}
-
-.upload-box:hover,
-.upload-box.drag-over {
-    border-color: var(--primary);
-
-    background:
-        radial-gradient(
-            circle,
-            rgba(0, 217, 255, 0.12),
-            transparent 65%
-        );
-
-    box-shadow:
-        inset 0 0 30px rgba(0, 217, 255, 0.04);
-}
-
-.upload-box input {
-    display: none;
-}
-
-.upload-icon {
-    width: 58px;
-    height: 58px;
-
-    display: grid;
-    place-items: center;
-
-    margin-bottom: 17px;
-
-    border: 1px solid rgba(0, 217, 255, 0.3);
-    border-radius: 15px;
-
-    color: var(--primary);
-
-    background: rgba(0, 217, 255, 0.07);
-
-    font-size: 25px;
-
-    transition: var(--transition);
-}
-
-.upload-box:hover .upload-icon {
-    transform: translateY(-4px);
-    box-shadow: 0 0 25px rgba(0, 217, 255, 0.16);
-}
-
-.upload-box h4 {
-    font-family: "Orbitron", sans-serif;
-    font-size: 12px;
-    letter-spacing: 1px;
-}
-
-.upload-box p {
-    margin-top: 7px;
-
-    color: var(--text-soft);
-
-    font-size: 11px;
-}
-
-.upload-box > span {
-    margin-top: 14px;
-
-    color: var(--text-muted);
-
-    font-size: 8px;
-    letter-spacing: 1px;
-}
-
-.file-info {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-
-    margin-top: 15px;
-    padding: 12px;
-
-    border: 1px solid rgba(37, 230, 154, 0.16);
-    border-radius: 10px;
-
-    background: rgba(37, 230, 154, 0.035);
-}
-
-.file-symbol {
-    width: 36px;
-    height: 36px;
-
-    display: grid;
-    place-items: center;
-
-    border-radius: 8px;
-
-    background: rgba(0, 217, 255, 0.08);
-
-    color: var(--primary);
-
-    font-size: 7px;
-    font-weight: 800;
-}
-
-.file-details {
-    flex: 1;
-    min-width: 0;
-}
-
-.file-details strong {
-    display: block;
-
-    overflow: hidden;
-
-    color: var(--text-main);
-
-    font-size: 11px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.file-details small {
-    display: block;
-    margin-top: 4px;
-
-    color: var(--text-muted);
-
-    font-size: 8px;
-}
-
-.file-info button {
-    width: 30px;
-    height: 30px;
-
-    border-radius: 7px;
-
-    background: rgba(255, 85, 119, 0.08);
-
-    color: var(--danger);
-
-    cursor: pointer;
-
-    font-size: 18px;
-}
-
-.analyze-btn {
-    width: 100%;
-    margin-top: 15px;
-}
-
-.analyze-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-
-    transform: none;
-}
-
-
-/* =========================================================
-   ANALYSIS DISPLAY
-========================================================= */
-
-.analysis-display {
-    min-height: 365px;
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
-
-.scan-circle {
-    position: relative;
-
-    width: 190px;
-    height: 190px;
-
-    display: grid;
-    place-items: center;
-
-    border: 1px solid rgba(0, 217, 255, 0.18);
-    border-radius: 50%;
-
-    background:
-        radial-gradient(
-            circle,
-            rgba(0, 217, 255, 0.09),
-            transparent 62%
-        );
-
-    box-shadow:
-        0 0 45px rgba(0, 217, 255, 0.07),
-        inset 0 0 35px rgba(0, 217, 255, 0.05);
-}
-
-.scan-circle::before,
-.scan-circle::after {
-    content: "";
-
-    position: absolute;
-
-    border-radius: 50%;
-
-    border: 1px solid rgba(0, 217, 255, 0.15);
-}
-
-.scan-circle::before {
-    inset: 18px;
-}
-
-.scan-circle::after {
-    inset: 37px;
-}
-
-.scan-line {
-    position: absolute;
-
-    top: 20px;
-    left: 50%;
-
-    width: 2px;
-    height: 150px;
-
-    background: linear-gradient(
-        to bottom,
-        transparent,
-        var(--primary),
-        transparent
-    );
-
-    transform-origin: center;
-    opacity: 0.6;
-
-    animation: scanRotate 4s linear infinite;
-}
-
-.scan-center {
-    position: relative;
-    z-index: 3;
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.scan-center span {
-    font-family: "Orbitron", sans-serif;
-    font-size: 28px;
-    font-weight: 700;
-
-    color: var(--primary);
-
-    text-shadow:
-        0 0 20px rgba(0, 217, 255, 0.4);
-}
-
-.scan-center small {
-    margin-top: 5px;
-
-    color: var(--text-muted);
-
-    font-size: 8px;
-    letter-spacing: 1.5px;
-}
-
-.analysis-status {
-    width: 100%;
-    max-width: 420px;
-
-    margin-top: 30px;
-}
-
-.status-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    padding: 9px 0;
-
-    border-bottom: 1px solid rgba(255, 255, 255, 0.045);
-}
-
-.status-row span {
-    color: var(--text-muted);
-
-    font-size: 8px;
-    letter-spacing: 1px;
-}
-
-.status-row strong {
-    color: var(--text-soft);
-
-    font-family: "Orbitron", sans-serif;
-    font-size: 8px;
-}
-
-
-/* =========================================================
-   RESULT
-========================================================= */
-
-.result-panel {
-    margin-top: 22px;
-    padding: 28px;
-}
-
-.result-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    gap: 20px;
-
-    padding-bottom: 22px;
-
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.result-header small {
-    color: var(--success);
-
-    font-size: 8px;
-    font-weight: 800;
-    letter-spacing: 1.4px;
-}
-
-.result-header h3 {
-    margin-top: 5px;
-
-    font-family: "Orbitron", sans-serif;
-    font-size: 20px;
-}
-
-.risk-badge {
-    padding: 10px 14px;
-
-    border: 1px solid rgba(37, 230, 154, 0.3);
-    border-radius: 8px;
-
-    background: rgba(37, 230, 154, 0.08);
-
-    color: var(--success);
-
-    font-size: 9px;
-    font-weight: 800;
-    letter-spacing: 1px;
-}
-
-.result-grid {
-    display: grid;
-    grid-template-columns: 220px 1fr;
-    gap: 30px;
-
-    padding: 28px 0;
-}
-
-.risk-score {
-    min-height: 160px;
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-
-    border: 1px solid var(--border);
-    border-radius: 15px;
-
-    background: rgba(0, 217, 255, 0.025);
-}
-
-.risk-score span {
-    color: var(--text-muted);
-
-    font-size: 8px;
-    letter-spacing: 1.3px;
-}
-
-.risk-score strong {
-    margin: 8px 0;
-
-    color: var(--success);
-
-    font-family: "Orbitron", sans-serif;
-    font-size: 48px;
-}
-
-.risk-score small {
-    color: var(--text-muted);
-    font-size: 8px;
-}
-
-.result-details {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-}
-
-.result-item {
-    padding: 14px;
-
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 10px;
-
-    background: rgba(255, 255, 255, 0.015);
-}
-
-.result-item span {
-    display: block;
-
-    color: var(--text-muted);
-
-    font-size: 7px;
-    letter-spacing: 1.2px;
-}
-
-.result-item strong {
-    display: block;
-    margin-top: 7px;
-
-    overflow: hidden;
-
-    color: var(--text-main);
-
-    font-size: 10px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.findings {
-    padding-top: 22px;
-
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.findings h4 {
-    margin-bottom: 13px;
-
-    color: var(--primary);
-
-    font-size: 9px;
-    letter-spacing: 1.2px;
-}
-
-.findings ul {
-    display: grid;
-    gap: 8px;
-
-    list-style: none;
-}
-
-.findings li {
-    position: relative;
-
-    padding-left: 18px;
-
-    color: var(--text-soft);
-
-    font-size: 11px;
-    line-height: 1.6;
-}
-
-.findings li::before {
-    content: "";
-
-    position: absolute;
-    top: 8px;
-    left: 0;
-
-    width: 5px;
-    height: 5px;
-
-    border-radius: 50%;
-
-    background: var(--success);
-    box-shadow: 0 0 10px var(--success);
-}
-
-
-/* =========================================================
-   WORKFLOW
-========================================================= */
-
-.workflow {
-    position: relative;
-
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 18px;
-}
-
-.workflow-line {
-    position: absolute;
-
-    top: 55px;
-    left: 8%;
-    right: 8%;
-
-    height: 1px;
-
-    background:
-        linear-gradient(
-            90deg,
-            transparent,
-            rgba(0, 217, 255, 0.35),
-            transparent
-        );
-}
-
-.workflow-step {
-    position: relative;
-    z-index: 2;
-
-    padding: 25px 17px;
-
-    border: 1px solid var(--border);
-    border-radius: 15px;
-
-    background: rgba(7, 17, 30, 0.72);
-
-    transition: var(--transition);
-}
-
-.workflow-step:hover {
-    transform: translateY(-7px);
-
-    border-color: var(--border-bright);
-
-    box-shadow:
-        0 20px 45px rgba(0, 0, 0, 0.25);
-}
-
-.step-number {
-    margin-bottom: 18px;
-
-    color: var(--text-muted);
-
-    font-family: "Orbitron", sans-serif;
-    font-size: 8px;
-}
-
-.step-icon {
-    width: 48px;
-    height: 48px;
-
-    display: grid;
-    place-items: center;
-
-    margin-bottom: 18px;
-
-    border: 1px solid rgba(0, 217, 255, 0.25);
-    border-radius: 12px;
-
-    color: var(--primary);
-
-    background: rgba(0, 217, 255, 0.06);
-
-    font-family: "Orbitron", sans-serif;
-    font-size: 11px;
-}
-
-.workflow-step h3 {
-    font-family: "Orbitron", sans-serif;
-    font-size: 11px;
-}
-
-.workflow-step p {
-    margin-top: 10px;
-
-    color: var(--text-muted);
-
-    font-size: 10px;
-    line-height: 1.6;
-}
-
-
-/* =========================================================
-   TECHNOLOGY
-========================================================= */
-
-.technology-section {
-    background:
-        linear-gradient(
-            180deg,
-            transparent,
-            rgba(71, 119, 255, 0.025),
-            transparent
-        );
-}
-
-.tech-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-}
-
-.tech-card {
-    position: relative;
-
-    min-height: 210px;
-
-    padding: 25px;
-
-    overflow: hidden;
-
-    border: 1px solid var(--border);
-    border-radius: 16px;
-
-    background: var(--bg-card);
-
-    transition: var(--transition);
-}
-
-.tech-card:hover {
-    transform: translateY(-6px);
-
-    border-color: var(--border-bright);
-
-    box-shadow:
-        0 20px 50px rgba(0, 0, 0, 0.25);
-}
-
-.tech-number {
-    position: absolute;
-    top: 18px;
-    right: 20px;
-
-    color: rgba(255, 255, 255, 0.12);
-
-    font-family: "Orbitron", sans-serif;
-    font-size: 10px;
-}
-
-.tech-icon {
-    width: 52px;
-    height: 52px;
-
-    display: grid;
-    place-items: center;
-
-    margin-bottom: 22px;
-
-    border: 1px solid rgba(0, 217, 255, 0.25);
-    border-radius: 13px;
-
-    background: rgba(0, 217, 255, 0.06);
-
-    color: var(--primary);
-
-    font-family: "Orbitron", sans-serif;
-    font-size: 11px;
-    font-weight: 800;
-}
-
-.tech-card h3 {
-    font-family: "Orbitron", sans-serif;
-    font-size: 12px;
-}
-
-.tech-card p {
-    max-width: 250px;
-    margin-top: 10px;
-
-    color: var(--text-muted);
-
-    font-size: 10px;
-    line-height: 1.6;
-}
-
-
-/* =========================================================
-   FEASIBILITY
-========================================================= */
-
-.feasibility-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 18px;
-}
-
-.feasibility-card {
-    padding: 28px;
-
-    border: 1px solid var(--border);
-    border-radius: 16px;
-
-    background: var(--bg-card);
-}
-
-.warning-card {
-    border-color: rgba(255, 200, 87, 0.15);
-}
-
-.large-icon {
-    width: 50px;
-    height: 50px;
-
-    display: grid;
-    place-items: center;
-
-    margin-bottom: 22px;
-
-    border-radius: 12px;
-
-    background: rgba(0, 217, 255, 0.07);
-
-    color: var(--primary);
-
-    font-family: "Orbitron", sans-serif;
-    font-size: 18px;
-}
-
-.warning-card .large-icon {
-    color: var(--warning);
-    background: rgba(255, 200, 87, 0.07);
-}
-
-.feasibility-card h3 {
-    font-family: "Orbitron", sans-serif;
-    font-size: 12px;
-}
-
-.feasibility-card p,
-.feasibility-card li {
-    color: var(--text-muted);
-
-    font-size: 10px;
-    line-height: 1.7;
-}
-
-.feasibility-card p {
-    margin-top: 12px;
-}
-
-.feasibility-card ul {
-    display: grid;
-    gap: 8px;
-
-    margin-top: 12px;
-
-    padding-left: 15px;
-}
-
-
-/* =========================================================
-   IMPACT
-========================================================= */
-
-.impact-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-}
-
-.impact-card {
-    position: relative;
-
-    min-height: 190px;
-
-    padding: 25px;
-
-    border: 1px solid var(--border);
-    border-radius: 15px;
-
-    background: var(--bg-card);
-
-    overflow: hidden;
-
-    transition: var(--transition);
-}
-
-.impact-card:hover {
-    transform: translateY(-5px);
-    border-color: var(--border-bright);
-}
-
-.impact-card > span {
-    color: rgba(0, 217, 255, 0.35);
-
-    font-family: "Orbitron", sans-serif;
-    font-size: 9px;
-}
-
-.impact-card h3 {
-    margin-top: 22px;
-
-    font-family: "Orbitron", sans-serif;
-    font-size: 11px;
-}
-
-.impact-card p {
-    margin-top: 11px;
-
-    color: var(--text-muted);
-
-    font-size: 10px;
-    line-height: 1.7;
-}
-
-
-/* =========================================================
-   CTA
-========================================================= */
-
-.cta-section {
-    position: relative;
-
-    margin: 30px 7% 100px;
-    padding: 80px 30px;
-
-    border: 1px solid var(--border-bright);
-    border-radius: 22px;
-
-    overflow: hidden;
-
-    background:
-        radial-gradient(
-            circle at center,
-            rgba(0, 217, 255, 0.1),
-            transparent 60%
-        ),
-        rgba(6, 16, 29, 0.8);
-
-    text-align: center;
-}
-
-.cta-section::before {
-    content: "";
-
-    position: absolute;
-    inset: 0;
-
-    background-image:
-        linear-gradient(
-            rgba(0, 217, 255, 0.025) 1px,
-            transparent 1px
-        ),
-        linear-gradient(
-            90deg,
-            rgba(0, 217, 255, 0.025) 1px,
-            transparent 1px
-        );
-
-    background-size: 35px 35px;
-    pointer-events: none;
-}
-
-.cta-content {
-    position: relative;
-    z-index: 2;
-}
-
-.cta-content h2 {
-    margin: 12px auto 15px;
-
-    font-family: "Orbitron", sans-serif;
-    font-size: clamp(28px, 4vw, 48px);
-}
-
-.cta-content h2 span {
-    color: var(--primary);
-}
-
-.cta-content p {
-    max-width: 600px;
-    margin: auto auto 25px;
-
-    color: var(--text-soft);
-
-    font-size: 12px;
-    line-height: 1.7;
-}
-
-
-/* =========================================================
-   FOOTER
-========================================================= */
-
-footer {
-    padding: 35px 7% 25px;
-
-    border-top: 1px solid rgba(0, 217, 255, 0.1);
-
-    background: rgba(2, 7, 14, 0.85);
-}
-
-.footer-brand {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.footer-brand strong {
-    color: var(--primary);
-
-    font-family: "Orbitron", sans-serif;
-    font-size: 15px;
-    letter-spacing: 1.5px;
-}
-
-.footer-brand span {
-    color: var(--text-muted);
-    font-size: 9px;
-}
-
-.footer-info {
-    display: flex;
-    gap: 25px;
-
-    margin-top: 18px;
-
-    color: var(--text-muted);
-
-    font-size: 8px;
-    letter-spacing: 1px;
-}
-
-.footer-bottom {
-    display: flex;
-    justify-content: space-between;
-    gap: 20px;
-
-    margin-top: 25px;
-    padding-top: 20px;
-
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-
-    color: var(--text-muted);
-
-    font-size: 8px;
-}
-
-.footer-bottom b {
-    color: var(--success);
-}
-
-
-/* =========================================================
-   UTILITIES
-========================================================= */
-
-.hidden {
-    display: none !important;
-}
-
-
-/* =========================================================
-   ANIMATIONS
-========================================================= */
-
-@keyframes rotateRing {
-    from {
-        transform: rotate(0deg);
+function startAnalysis() {
+
+    if (!selectedFile) {
+        alert("Please upload a document first.");
+        return;
     }
 
-    to {
-        transform: rotate(360deg);
-    }
+    analyzeBtn.disabled = true;
+
+    resultPanel.classList.add("hidden");
+
+    let progress = 0;
+
+    scanPercentage.textContent = "0%";
+
+    documentStatus.textContent = "PROCESSING";
+    ocrStatus.textContent = "SCANNING";
+    riskStatus.textContent = "ANALYZING";
+    finalStatus.textContent = "PROCESSING";
+
+    clearInterval(scanTimer);
+
+    scanTimer = setInterval(function () {
+
+        progress += Math.floor(Math.random() * 7) + 2;
+
+        if (progress > 100) {
+            progress = 100;
+        }
+
+        scanPercentage.textContent = `${progress}%`;
+
+        updateAnalysisStages(progress);
+
+        if (progress >= 100) {
+
+            clearInterval(scanTimer);
+
+            finishAnalysis();
+        }
+
+    }, 120);
 }
 
-@keyframes rotateRingReverse {
-    from {
-        transform: rotate(360deg);
-    }
 
-    to {
-        transform: rotate(0deg);
-    }
-}
+/* =========================================================
+   ANALYSIS STAGES
+========================================================= */
 
-@keyframes scanRotate {
-    from {
-        transform: rotate(0deg);
-    }
+function updateAnalysisStages(progress) {
 
-    to {
-        transform: rotate(360deg);
-    }
-}
+    if (progress < 25) {
 
-@keyframes statusBlink {
-    0%,
-    100% {
-        opacity: 1;
-    }
+        documentStatus.textContent = "READING";
+        ocrStatus.textContent = "SCANNING";
+        riskStatus.textContent = "WAITING";
+        finalStatus.textContent = "WAITING";
 
-    50% {
-        opacity: 0.35;
-    }
-}
+    } else if (progress < 50) {
 
-@keyframes iconPulse {
-    0%,
-    100% {
-        box-shadow:
-            0 0 20px rgba(0, 217, 255, 0.08),
-            inset 0 0 18px rgba(0, 217, 255, 0.04);
-    }
+        documentStatus.textContent = "DETECTED";
+        ocrStatus.textContent = "EXTRACTING";
+        riskStatus.textContent = "WAITING";
+        finalStatus.textContent = "WAITING";
 
-    50% {
-        box-shadow:
-            0 0 30px rgba(0, 217, 255, 0.2),
-            inset 0 0 22px rgba(0, 217, 255, 0.08);
-    }
-}
+    } else if (progress < 75) {
 
-@keyframes floatCard {
-    0%,
-    100% {
-        transform: translateY(0);
-    }
+        documentStatus.textContent = "DETECTED";
+        ocrStatus.textContent = "EXTRACTED";
+        riskStatus.textContent = "ANALYZING";
+        finalStatus.textContent = "WAITING";
 
-    50% {
-        transform: translateY(-9px);
+    } else if (progress < 100) {
+
+        documentStatus.textContent = "VALIDATED";
+        ocrStatus.textContent = "VERIFIED";
+        riskStatus.textContent = "CALCULATING";
+        finalStatus.textContent = "PROCESSING";
+
+    } else {
+
+        documentStatus.textContent = "VALIDATED";
+        ocrStatus.textContent = "VERIFIED";
+        riskStatus.textContent = "COMPLETED";
+        finalStatus.textContent = "READY";
+
     }
 }
 
 
 /* =========================================================
-   RESPONSIVE — TABLET
+   GENERATE SCREENING RESULT
 ========================================================= */
 
-@media (max-width: 1100px) {
+function generateResult() {
 
-    .navbar {
-        flex-wrap: wrap;
+    /*
+       Frontend demo simulation only.
+
+       This does NOT claim to actually detect
+       forged documents. A real verification system
+       would require a backend, OCR engine,
+       computer vision and trained validation models.
+    */
+
+    const score = Math.floor(Math.random() * 36) + 8;
+
+    let level;
+    let recommendationText;
+    let findings;
+
+    if (score <= 25) {
+
+        level = "LOW RISK";
+
+        recommendationText =
+            "Proceed to standard verification.";
+
+        findings = [
+            "No major suspicious pattern detected in preliminary screening.",
+            "Document structure appears readable.",
+            "Required information appears extractable.",
+            "No immediate high-risk indicator detected."
+        ];
+
+    } else if (score <= 60) {
+
+        level = "REVIEW REQUIRED";
+
+        recommendationText =
+            "Perform additional verification.";
+
+        findings = [
+            "Some document attributes require further review.",
+            "Additional identity validation is recommended.",
+            "Preliminary screening detected moderate risk indicators.",
+            "Human verification should be considered before approval."
+        ];
+
+    } else {
+
+        level = "HIGH RISK";
+
+        recommendationText =
+            "Manual verification strongly recommended.";
+
+        findings = [
+            "Potential suspicious pattern detected.",
+            "Document requires additional validation.",
+            "Identity information should be cross-checked.",
+            "Manual verification is recommended before approval."
+        ];
     }
 
-    .navbar nav {
-        order: 3;
-        width: 100%;
-
-        overflow-x: auto;
-        justify-content: flex-start;
-
-        padding-bottom: 4px;
-    }
-
-    .hero {
-        grid-template-columns: 1fr;
-        padding-top: 60px;
-    }
-
-    .hero-content {
-        text-align: center;
-        margin: auto;
-    }
-
-    .eyebrow,
-    .hero-buttons {
-        margin-left: auto;
-        margin-right: auto;
-    }
-
-    .hero-buttons {
-        justify-content: center;
-    }
-
-    .hero-meta {
-        justify-content: center;
-    }
-
-    .hero-visual {
-        min-height: 440px;
-    }
-
-    .workflow {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .workflow-line {
-        display: none;
-    }
-
-    .tech-grid,
-    .impact-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
+    return {
+        score,
+        level,
+        recommendationText,
+        findings
+    };
 }
 
 
 /* =========================================================
-   RESPONSIVE — MOBILE
+   FINISH ANALYSIS
 ========================================================= */
 
-@media (max-width: 760px) {
+function finishAnalysis() {
 
-    .navbar {
-        padding: 12px 5%;
-    }
+    const result = generateResult();
 
-    .brand {
-        min-width: auto;
-    }
+    setTimeout(function () {
 
-    .brand h1 {
-        font-size: 15px;
-    }
+        resultPanel.classList.remove("hidden");
 
-    .system-status {
-        font-size: 7px;
-        padding: 7px 9px;
-    }
+        resultFile.textContent = selectedFile
+            ? selectedFile.name
+            : "Uploaded document";
 
-    .navbar nav a {
-        font-size: 9px;
-        padding: 8px 9px;
-    }
+        riskScore.textContent = result.score;
 
-    .hero {
-        padding: 55px 5% 70px;
-    }
+        recommendation.textContent =
+            result.recommendationText;
 
-    .hero h2 {
-        font-size: 34px;
-        letter-spacing: -1px;
-    }
+        findingsList.innerHTML = "";
 
-    .hero-content > p {
-        font-size: 13px;
-    }
+        result.findings.forEach(function (finding) {
 
-    .hero-meta {
-        gap: 20px;
-    }
+            const li = document.createElement("li");
 
-    .hero-visual {
-        min-height: 370px;
-    }
+            li.textContent = finding;
 
-    .ai-core {
-        width: 210px;
-        height: 210px;
-    }
+            findingsList.appendChild(li);
 
-    .core-center {
-        width: 95px;
-        height: 95px;
-    }
+        });
 
-    .core-center span {
-        font-size: 22px;
-    }
 
-    .orbit-one {
-        width: 290px;
-        height: 290px;
-    }
+        /* -----------------------------------------
+           RESULT COLORS
+        ----------------------------------------- */
 
-    .orbit-two {
-        width: 350px;
-        height: 350px;
-    }
+        if (result.score <= 25) {
 
-    .floating-card {
-        min-width: 145px;
-        padding: 10px;
-    }
+            riskBadge.textContent = result.level;
 
-    .card-top {
-        top: 30px;
-        right: 0;
-    }
+            riskBadge.style.color = "var(--success)";
+            riskBadge.style.borderColor =
+                "rgba(37, 230, 154, 0.3)";
+            riskBadge.style.background =
+                "rgba(37, 230, 154, 0.08)";
 
-    .card-bottom {
-        bottom: 25px;
-        left: 0;
-    }
+            riskScore.style.color =
+                "var(--success)";
 
-    .section {
-        padding: 75px 5%;
-    }
+        } else if (result.score <= 60) {
 
-    .screening-container {
-        grid-template-columns: 1fr;
-    }
+            riskBadge.textContent = result.level;
 
-    .result-grid {
-        grid-template-columns: 1fr;
-    }
+            riskBadge.style.color = "var(--warning)";
+            riskBadge.style.borderColor =
+                "rgba(255, 200, 87, 0.3)";
+            riskBadge.style.background =
+                "rgba(255, 200, 87, 0.08)";
 
-    .result-details {
-        grid-template-columns: 1fr;
-    }
+            riskScore.style.color =
+                "var(--warning)";
 
-    .workflow {
-        grid-template-columns: 1fr;
-    }
+        } else {
 
-    .tech-grid,
-    .feasibility-grid,
-    .impact-grid {
-        grid-template-columns: 1fr;
-    }
+            riskBadge.textContent = result.level;
 
-    .cta-section {
-        margin: 10px 5% 70px;
-        padding: 60px 20px;
-    }
+            riskBadge.style.color = "var(--danger)";
+            riskBadge.style.borderColor =
+                "rgba(255, 85, 119, 0.3)";
+            riskBadge.style.background =
+                "rgba(255, 85, 119, 0.08)";
 
-    .footer-brand,
-    .footer-info,
-    .footer-bottom {
-        flex-direction: column;
-        align-items: flex-start;
-    }
+            riskScore.style.color =
+                "var(--danger)";
+        }
 
-    .footer-info {
-        gap: 10px;
-    }
+
+        finalStatus.textContent = "COMPLETED";
+
+        analyzeBtn.disabled = false;
+
+
+        /*
+           Smoothly bring the result into view.
+        */
+
+        resultPanel.scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+        });
+
+    }, 500);
 }
 
 
 /* =========================================================
-   SMALL MOBILE
+   ANALYZE BUTTON
 ========================================================= */
 
-@media (max-width: 420px) {
+analyzeBtn.addEventListener("click", function () {
 
-    .navbar nav {
-        gap: 0;
+    if (analyzeBtn.disabled) {
+        return;
     }
 
-    .navbar nav a {
-        padding: 7px;
-        font-size: 8px;
+    startAnalysis();
+});
+
+
+/* =========================================================
+   NAVIGATION ACTIVE STATE
+========================================================= */
+
+const navigationLinks =
+    document.querySelectorAll(".navbar nav a");
+
+const sections =
+    document.querySelectorAll("main section[id]");
+
+window.addEventListener("scroll", function () {
+
+    let currentSection = "";
+
+    sections.forEach(function (section) {
+
+        const sectionTop =
+            section.offsetTop - 160;
+
+        const sectionHeight =
+            section.offsetHeight;
+
+        if (
+            window.scrollY >= sectionTop &&
+            window.scrollY < sectionTop + sectionHeight
+        ) {
+
+            currentSection = section.getAttribute("id");
+        }
+    });
+
+
+    navigationLinks.forEach(function (link) {
+
+        link.classList.remove("active");
+
+        const target =
+            link.getAttribute("href");
+
+        if (target === `#${currentSection}`) {
+            link.classList.add("active");
+        }
+
+    });
+
+});
+
+
+/* =========================================================
+   NAVIGATION CLICK
+========================================================= */
+
+navigationLinks.forEach(function (link) {
+
+    link.addEventListener("click", function () {
+
+        navigationLinks.forEach(function (item) {
+            item.classList.remove("active");
+        });
+
+        this.classList.add("active");
+    });
+
+});
+
+
+/* =========================================================
+   INTERSECTION ANIMATION
+========================================================= */
+
+const animatedElements = document.querySelectorAll(
+    ".tech-card, .impact-card, .workflow-step, .feasibility-card"
+);
+
+const observer = new IntersectionObserver(
+    function (entries) {
+
+        entries.forEach(function (entry) {
+
+            if (entry.isIntersecting) {
+
+                entry.target.style.opacity = "1";
+                entry.target.style.transform = "translateY(0)";
+
+                observer.unobserve(entry.target);
+            }
+
+        });
+
+    },
+    {
+        threshold: 0.12
+    }
+);
+
+
+animatedElements.forEach(function (element) {
+
+    element.style.opacity = "0";
+    element.style.transform = "translateY(20px)";
+    element.style.transition =
+        "opacity 0.6s ease, transform 0.6s ease";
+
+    observer.observe(element);
+});
+
+
+/* =========================================================
+   KEYBOARD SHORTCUT
+========================================================= */
+
+document.addEventListener("keydown", function (event) {
+
+    /*
+       Ctrl + U focuses document upload.
+    */
+
+    if (
+        event.ctrlKey &&
+        event.key.toLowerCase() === "u"
+    ) {
+
+        event.preventDefault();
+
+        documentInput.click();
     }
 
-    .system-status {
-        display: none;
-    }
+});
 
-    .hero h2 {
-        font-size: 29px;
-    }
 
-    .hero-meta {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
-    }
+/* =========================================================
+   INITIALIZE
+========================================================= */
 
-    .hero-meta strong {
-        font-size: 14px;
-    }
+resetAnalysis();
 
-    .hero-meta span {
-        font-size: 6px;
-    }
+console.log(
+    "%c IDENTIS SYSTEM ONLINE ",
+    "color:#00d9ff;font-size:18px;font-weight:bold;"
+);
 
-    .upload-box {
-        min-height: 230px;
-    }
+console.log(
+    "AI Identity & Document Screening System"
+);
 
-    .result-header {
-        align-items: flex-start;
-        flex-direction: column;
-    }
-}
+console.log(
+    "Frontend screening demo initialized."
+);

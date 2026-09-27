@@ -1,18 +1,29 @@
 /* =========================================================
    IDENTIS — COMPLETE APPLICATION JAVASCRIPT
-   Existing analysis flow preserved
-   Added:
-   1. Download Verification Report
-   2. Screening History
-   3. Document Security / Privacy Indicator
-   4. Document Information / Details
-   5. Reset / Scan Another Document
+   Existing UI / Features Preserved
+
+   ANALYSIS UPGRADE:
+   1. Actual JPG / JPEG / PNG pixel analysis
+   2. Resolution / brightness / contrast analysis
+   3. Document-like image detection
+   4. Visual anomaly indicators
+   5. Normal documents receive lower risk
+   6. Human/person photos are rejected as invalid input
+   7. Image-specific screening findings
+   8. Actual result saved to History
+   9. Actual result included in Verification Report
+   10. PDF handling preserved as preliminary frontend analysis
+
+   IMPORTANT:
+   This is a frontend screening demonstration.
+   It does NOT prove legal authenticity or detect forgery
+   with a production-grade ML model.
 ========================================================= */
 
 "use strict";
 
 /* =========================================================
-   DOM REFERENCES — EXISTING
+   DOM REFERENCES
 ========================================================= */
 
 const documentInput = document.getElementById("documentInput");
@@ -64,7 +75,6 @@ const HISTORY_STORAGE_KEY = "identisScreeningHistory";
 
 /* =========================================================
    FEATURE STYLES
-   Dynamically added so style.css does not need modification.
 ========================================================= */
 
 function injectFeatureStyles() {
@@ -76,10 +86,6 @@ function injectFeatureStyles() {
     style.id = "identis-feature-styles";
 
     style.textContent = `
-        /* =====================================================
-           IDENTIS FEATURE EXTENSIONS
-        ===================================================== */
-
         .identis-feature-card {
             margin-top: 22px;
             padding: 22px;
@@ -329,6 +335,12 @@ function injectFeatureStyles() {
             border: 1px solid rgba(255,50,50,0.14);
         }
 
+        .identis-history-invalid {
+            color: #ffb36b;
+            background: rgba(255,150,50,0.08);
+            border: 1px solid rgba(255,150,50,0.14);
+        }
+
         .identis-history-empty {
             padding: 22px;
             border: 1px dashed rgba(255,255,255,0.08);
@@ -402,9 +414,7 @@ function initializeFeatureUI() {
         return;
     }
 
-    /* -----------------------------------------------------
-       DOCUMENT DETAILS CARD
-    ----------------------------------------------------- */
+    /* DOCUMENT DETAILS */
 
     documentDetailsCard = createFeatureCard(
         "identis-document-details hidden",
@@ -445,9 +455,7 @@ function initializeFeatureUI() {
 
     documentDetailsCard.appendChild(detailGrid);
 
-    /* -----------------------------------------------------
-       SECURITY / PRIVACY CARD
-    ----------------------------------------------------- */
+    /* SECURITY */
 
     securityCard = createFeatureCard(
         "identis-security-card hidden",
@@ -472,7 +480,7 @@ function initializeFeatureUI() {
     const securityDescription = document.createElement("div");
     securityDescription.className = "identis-security-description";
     securityDescription.textContent =
-        "This frontend demonstration does not upload your document to a backend server. The screening result is simulated locally in the browser.";
+        "This frontend demonstration does not upload your document to a backend server. Image analysis is performed locally in the browser.";
 
     securityMain.appendChild(securityStatus);
     securityMain.appendChild(securityDescription);
@@ -487,9 +495,7 @@ function initializeFeatureUI() {
 
     securityCard.appendChild(securityContent);
 
-    /* -----------------------------------------------------
-       ACTION BUTTONS
-    ----------------------------------------------------- */
+    /* ACTIONS */
 
     featureActions = document.createElement("div");
     featureActions.className = "identis-feature-actions hidden";
@@ -509,12 +515,17 @@ function initializeFeatureUI() {
     featureActions.appendChild(downloadBtn);
     featureActions.appendChild(resetBtn);
 
-    downloadBtn.addEventListener("click", downloadVerificationReport);
-    resetBtn.addEventListener("click", resetForNewDocument);
+    downloadBtn.addEventListener(
+        "click",
+        downloadVerificationReport
+    );
 
-    /* -----------------------------------------------------
-       INSERT FEATURES
-    ----------------------------------------------------- */
+    resetBtn.addEventListener(
+        "click",
+        resetForNewDocument
+    );
+
+    /* INSERT */
 
     resultPanel.parentNode.insertBefore(
         documentDetailsCard,
@@ -528,9 +539,7 @@ function initializeFeatureUI() {
 
     resultPanel.appendChild(featureActions);
 
-    /* -----------------------------------------------------
-       SCREENING HISTORY
-    ----------------------------------------------------- */
+    /* HISTORY */
 
     historySection = createFeatureCard(
         "identis-history hidden",
@@ -553,7 +562,7 @@ function initializeFeatureUI() {
 }
 
 /* =========================================================
-   RESET ANALYSIS — EXISTING LOGIC + FEATURE RESET
+   RESET ANALYSIS
 ========================================================= */
 
 function resetAnalysis() {
@@ -622,7 +631,7 @@ function resetAnalysis() {
 }
 
 /* =========================================================
-   FILE SIZE FORMATTER — EXISTING
+   FILE SIZE FORMATTER
 ========================================================= */
 
 function formatFileSize(bytes) {
@@ -631,6 +640,7 @@ function formatFileSize(bytes) {
     }
 
     const units = ["Bytes", "KB", "MB", "GB"];
+
     const index = Math.floor(
         Math.log(bytes) / Math.log(1024)
     );
@@ -645,7 +655,7 @@ function formatFileSize(bytes) {
 }
 
 /* =========================================================
-   FILE VALIDATION — EXISTING
+   FILE VALIDATION
 ========================================================= */
 
 function isValidFile(file) {
@@ -733,7 +743,9 @@ function formatDateTime(date) {
    DOCUMENT DETAILS
 ========================================================= */
 
-function updateDocumentDetails(statusText = "READY FOR SCREENING") {
+function updateDocumentDetails(
+    statusText = "READY FOR SCREENING"
+) {
     if (!selectedFile || !documentDetailsCard) {
         return;
     }
@@ -757,7 +769,8 @@ function updateDocumentDetails(statusText = "READY FOR SCREENING") {
         document.getElementById("detailScreeningStatus");
 
     if (detailFileName) {
-        detailFileName.textContent = selectedFile.name;
+        detailFileName.textContent =
+            selectedFile.name;
     }
 
     if (detailFileType) {
@@ -807,7 +820,7 @@ function showSecurityIndicator() {
 }
 
 /* =========================================================
-   HANDLE FILE — EXISTING FLOW PRESERVED
+   HANDLE FILE
 ========================================================= */
 
 function handleFile(file) {
@@ -847,12 +860,15 @@ function handleFile(file) {
         documentStatus.textContent = "READY";
     }
 
-    updateDocumentDetails("READY FOR SCREENING");
+    updateDocumentDetails(
+        "READY FOR SCREENING"
+    );
+
     showSecurityIndicator();
 }
 
 /* =========================================================
-   FILE INPUT — EXISTING
+   FILE INPUT
 ========================================================= */
 
 if (documentInput) {
@@ -869,7 +885,7 @@ if (documentInput) {
 }
 
 /* =========================================================
-   REMOVE FILE — EXISTING
+   REMOVE FILE
 ========================================================= */
 
 if (removeFile) {
@@ -896,7 +912,7 @@ if (removeFile) {
 }
 
 /* =========================================================
-   DRAG & DROP — EXISTING
+   DRAG & DROP
 ========================================================= */
 
 if (uploadBox) {
@@ -930,17 +946,16 @@ if (uploadBox) {
                 return;
             }
 
-            /*
-             * Synchronize dropped file with the input.
-             */
             try {
                 const dataTransfer =
                     new DataTransfer();
 
                 dataTransfer.items.add(file);
 
-                documentInput.files =
-                    dataTransfer.files;
+                if (documentInput) {
+                    documentInput.files =
+                        dataTransfer.files;
+                }
             } catch (error) {
                 console.warn(
                     "Could not synchronize dropped file with input.",
@@ -954,7 +969,7 @@ if (uploadBox) {
 }
 
 /* =========================================================
-   START ANALYSIS — EXISTING FLOW
+   START ANALYSIS
 ========================================================= */
 
 function startAnalysis() {
@@ -1008,9 +1023,10 @@ function startAnalysis() {
 
     scanTimer = setInterval(
         () => {
-            progress += Math.floor(
-                Math.random() * 9
-            ) + 4;
+            progress +=
+                Math.floor(
+                    Math.random() * 9
+                ) + 4;
 
             if (progress >= 100) {
                 progress = 100;
@@ -1035,7 +1051,7 @@ function startAnalysis() {
 }
 
 /* =========================================================
-   ANALYSIS STAGES — EXISTING
+   ANALYSIS STAGES
 ========================================================= */
 
 function updateAnalysisStages(progress) {
@@ -1046,7 +1062,7 @@ function updateAnalysisStages(progress) {
 
     if (progress >= 35 && ocrStatus) {
         ocrStatus.textContent =
-            "OCR COMPLETE";
+            "IMAGE ANALYSIS";
     }
 
     if (progress >= 55 && riskStatus) {
@@ -1061,73 +1077,1143 @@ function updateAnalysisStages(progress) {
 }
 
 /* =========================================================
-   GENERATE RESULT — EXISTING RISK LOGIC PRESERVED
+   IMAGE HELPERS
 ========================================================= */
 
-function generateResult() {
+function clamp(value, min, max) {
+    return Math.max(
+        min,
+        Math.min(max, value)
+    );
+}
+
+function isImageFile(file) {
+    if (!file) {
+        return false;
+    }
+
+    const type = file.type.toLowerCase();
+    const name = file.name.toLowerCase();
+
+    return (
+        type === "image/jpeg" ||
+        type === "image/jpg" ||
+        type === "image/png" ||
+        name.endsWith(".jpg") ||
+        name.endsWith(".jpeg") ||
+        name.endsWith(".png")
+    );
+}
+
+function isPdfFile(file) {
+    if (!file) {
+        return false;
+    }
+
+    return (
+        file.type === "application/pdf" ||
+        file.name.toLowerCase().endsWith(".pdf")
+    );
+}
+
+/* =========================================================
+   LOAD IMAGE
+========================================================= */
+
+function loadImageFromFile(file) {
+    return new Promise(
+        (resolve, reject) => {
+            const objectUrl =
+                URL.createObjectURL(file);
+
+            const image =
+                new Image();
+
+            image.onload = () => {
+                URL.revokeObjectURL(objectUrl);
+                resolve(image);
+            };
+
+            image.onerror = () => {
+                URL.revokeObjectURL(objectUrl);
+                reject(
+                    new Error(
+                        "Unable to decode image."
+                    )
+                );
+            };
+
+            image.src = objectUrl;
+        }
+    );
+}
+
+/* =========================================================
+   IMAGE PIXEL ANALYSIS
+
+   Reads actual RGBA pixels from the uploaded image.
+========================================================= */
+
+async function analyzeImagePixels(file) {
+    const image =
+        await loadImageFromFile(file);
+
+    const originalWidth =
+        image.naturalWidth || image.width;
+
+    const originalHeight =
+        image.naturalHeight || image.height;
+
+    if (
+        !originalWidth ||
+        !originalHeight
+    ) {
+        throw new Error(
+            "Image dimensions could not be determined."
+        );
+    }
+
     /*
-     * Frontend demo simulation.
-     * Existing score range intentionally preserved.
+     * Limit canvas processing size for browser performance.
+     * We still preserve original resolution in the result.
      */
-    const score =
-        Math.floor(Math.random() * 36) + 8;
+    const maxDimension = 1200;
+
+    const scale =
+        Math.min(
+            1,
+            maxDimension /
+                Math.max(
+                    originalWidth,
+                    originalHeight
+                )
+        );
+
+    const width =
+        Math.max(
+            1,
+            Math.round(
+                originalWidth * scale
+            )
+        );
+
+    const height =
+        Math.max(
+            1,
+            Math.round(
+                originalHeight * scale
+            )
+        );
+
+    const canvas =
+        document.createElement("canvas");
+
+    canvas.width = width;
+    canvas.height = height;
+
+    const ctx =
+        canvas.getContext(
+            "2d",
+            {
+                willReadFrequently: true
+            }
+        );
+
+    if (!ctx) {
+        throw new Error(
+            "Canvas processing is unavailable."
+        );
+    }
+
+    ctx.drawImage(
+        image,
+        0,
+        0,
+        width,
+        height
+    );
+
+    const imageData =
+        ctx.getImageData(
+            0,
+            0,
+            width,
+            height
+        );
+
+    const pixels =
+        imageData.data;
+
+    /*
+     * Sample pixels instead of processing every
+     * pixel on very large images.
+     */
+    const totalPixels =
+        width * height;
+
+    const sampleStep =
+        Math.max(
+            1,
+            Math.floor(
+                Math.sqrt(
+                    totalPixels /
+                    120000
+                )
+            )
+        );
+
+    let sampleCount = 0;
+
+    let brightnessSum = 0;
+    let brightnessSquaredSum = 0;
+
+    let saturationSum = 0;
+
+    let darkPixels = 0;
+    let brightPixels = 0;
+
+    let colorfulPixels = 0;
+    let skinTonePixels = 0;
+
+    let edgeCount = 0;
+    let strongEdgeCount = 0;
+
+    let borderBrightnessSum = 0;
+    let centerBrightnessSum = 0;
+
+    let borderCount = 0;
+    let centerCount = 0;
+
+    /*
+     * First pass:
+     * brightness, saturation, skin-tone approximation,
+     * dark/bright ratios and regional brightness.
+     */
+    for (
+        let y = 0;
+        y < height;
+        y += sampleStep
+    ) {
+        for (
+            let x = 0;
+            x < width;
+            x += sampleStep
+        ) {
+            const index =
+                (y * width + x) * 4;
+
+            const r = pixels[index];
+            const g = pixels[index + 1];
+            const b = pixels[index + 2];
+
+            const max =
+                Math.max(r, g, b);
+
+            const min =
+                Math.min(r, g, b);
+
+            const brightness =
+                (
+                    0.299 * r +
+                    0.587 * g +
+                    0.114 * b
+                );
+
+            const saturation =
+                max === 0
+                    ? 0
+                    : (max - min) / max;
+
+            brightnessSum +=
+                brightness;
+
+            brightnessSquaredSum +=
+                brightness * brightness;
+
+            saturationSum +=
+                saturation;
+
+            sampleCount++;
+
+            if (brightness < 45) {
+                darkPixels++;
+            }
+
+            if (brightness > 225) {
+                brightPixels++;
+            }
+
+            if (saturation > 0.28) {
+                colorfulPixels++;
+            }
+
+            /*
+             * Approximate skin-tone region.
+             * This is deliberately used only as a heuristic,
+             * not as face recognition.
+             */
+            const skinTone =
+                r > 70 &&
+                g > 35 &&
+                b > 20 &&
+                r > g * 1.08 &&
+                g > b * 1.08 &&
+                r - b > 25 &&
+                (r - g) > 5;
+
+            if (skinTone) {
+                skinTonePixels++;
+            }
+
+            const isBorder =
+                x < width * 0.12 ||
+                x > width * 0.88 ||
+                y < height * 0.12 ||
+                y > height * 0.88;
+
+            const isCenter =
+                x > width * 0.30 &&
+                x < width * 0.70 &&
+                y > height * 0.30 &&
+                y < height * 0.70;
+
+            if (isBorder) {
+                borderBrightnessSum +=
+                    brightness;
+
+                borderCount++;
+            }
+
+            if (isCenter) {
+                centerBrightnessSum +=
+                    brightness;
+
+                centerCount++;
+            }
+        }
+    }
+
+    /*
+     * Second pass:
+     * simple luminance edge analysis.
+     */
+    for (
+        let y = 0;
+        y < height - sampleStep;
+        y += sampleStep
+    ) {
+        for (
+            let x = 0;
+            x < width - sampleStep;
+            x += sampleStep
+        ) {
+            const index1 =
+                (y * width + x) * 4;
+
+            const index2 =
+                (
+                    y * width +
+                    (x + sampleStep)
+                ) * 4;
+
+            const index3 =
+                (
+                    (y + sampleStep) *
+                    width +
+                    x
+                ) * 4;
+
+            const p1 =
+                (
+                    0.299 * pixels[index1] +
+                    0.587 * pixels[index1 + 1] +
+                    0.114 * pixels[index1 + 2]
+                );
+
+            const p2 =
+                (
+                    0.299 * pixels[index2] +
+                    0.587 * pixels[index2 + 1] +
+                    0.114 * pixels[index2 + 2]
+                );
+
+            const p3 =
+                (
+                    0.299 * pixels[index3] +
+                    0.587 * pixels[index3 + 1] +
+                    0.114 * pixels[index3 + 2]
+                );
+
+            const horizontalDifference =
+                Math.abs(p1 - p2);
+
+            const verticalDifference =
+                Math.abs(p1 - p3);
+
+            const edgeStrength =
+                Math.max(
+                    horizontalDifference,
+                    verticalDifference
+                );
+
+            if (edgeStrength > 12) {
+                edgeCount++;
+            }
+
+            if (edgeStrength > 45) {
+                strongEdgeCount++;
+            }
+        }
+    }
+
+    const safeSampleCount =
+        Math.max(
+            sampleCount,
+            1
+        );
+
+    const brightness =
+        brightnessSum /
+        safeSampleCount;
+
+    const variance =
+        (
+            brightnessSquaredSum /
+            safeSampleCount
+        ) -
+        brightness * brightness;
+
+    const contrast =
+        Math.sqrt(
+            Math.max(
+                0,
+                variance
+            )
+        );
+
+    const saturation =
+        saturationSum /
+        safeSampleCount;
+
+    const darkRatio =
+        darkPixels /
+        safeSampleCount;
+
+    const brightRatio =
+        brightPixels /
+        safeSampleCount;
+
+    const colorfulRatio =
+        colorfulPixels /
+        safeSampleCount;
+
+    const skinToneRatio =
+        skinTonePixels /
+        safeSampleCount;
+
+    const edgeSamples =
+        Math.max(
+            1,
+            Math.floor(
+                (
+                    (width - sampleStep) /
+                    sampleStep
+                ) *
+                (
+                    (height - sampleStep) /
+                    sampleStep
+                )
+            )
+        );
+
+    const edgeDensity =
+        edgeCount /
+        edgeSamples;
+
+    const strongEdgeDensity =
+        strongEdgeCount /
+        edgeSamples;
+
+    const borderBrightness =
+        borderCount > 0
+            ? borderBrightnessSum /
+              borderCount
+            : brightness;
+
+    const centerBrightness =
+        centerCount > 0
+            ? centerBrightnessSum /
+              centerCount
+            : brightness;
+
+    const borderCenterDifference =
+        Math.abs(
+            borderBrightness -
+            centerBrightness
+        );
+
+    const aspectRatio =
+        originalWidth /
+        originalHeight;
+
+    const megapixels =
+        (
+            originalWidth *
+            originalHeight
+        ) / 1000000;
+
+    /*
+     * Document shape heuristics.
+     */
+    const landscapeDocumentShape =
+        aspectRatio >= 1.20 &&
+        aspectRatio <= 2.10;
+
+    const portraitDocumentShape =
+        aspectRatio >= 0.62 &&
+        aspectRatio < 1.20;
+
+    const veryPortrait =
+        aspectRatio < 0.78;
+
+    const squareLike =
+        aspectRatio >= 0.88 &&
+        aspectRatio <= 1.12;
+
+    /*
+     * Paper/document visual characteristics.
+     */
+    const brightPaperRatio =
+        clamp(
+            (
+                brightRatio +
+                (1 - saturation) * 0.45
+            ),
+            0,
+            1
+        );
+
+    const documentLikeScore =
+        (
+            (landscapeDocumentShape ? 0.35 : 0) +
+            (brightPaperRatio > 0.48 ? 0.25 : 0) +
+            (edgeDensity > 0.045 ? 0.20 : 0) +
+            (contrast > 22 ? 0.10 : 0) +
+            (borderCenterDifference > 5 ? 0.10 : 0)
+        );
+
+    /*
+     * Optional browser FaceDetector.
+     *
+     * Not required for the main analysis.
+     * If unavailable, heuristics are used.
+     */
+    let faceCount = 0;
+    let faceDetectionAvailable = false;
+
+    try {
+        if (
+            "FaceDetector" in window
+        ) {
+            const detector =
+                new FaceDetector({
+                    fastMode: true,
+                    maxDetectedFaces: 10
+                });
+
+            const faces =
+                await detector.detect(
+                    image
+                );
+
+            faceCount =
+                Array.isArray(faces)
+                    ? faces.length
+                    : 0;
+
+            faceDetectionAvailable = true;
+        }
+    } catch (error) {
+        faceCount = 0;
+        faceDetectionAvailable = false;
+    }
+
+    /*
+     * Person-photo heuristic.
+     *
+     * Face alone does NOT reject an image because
+     * legitimate identity documents can contain a face.
+     */
+    const colorfulPhoto =
+        colorfulRatio > 0.10;
+
+    const skinTonePresent =
+        skinToneRatio > 0.025;
+
+    const portraitPhotoShape =
+        veryPortrait ||
+        squareLike;
+
+    const weakDocumentStructure =
+        documentLikeScore < 0.50;
+
+    const photoHeuristic =
+        portraitPhotoShape &&
+        colorfulPhoto &&
+        skinTonePresent &&
+        weakDocumentStructure &&
+        edgeDensity > 0.035;
+
+    const detectedPersonPhoto =
+        (
+            faceDetectionAvailable &&
+            faceCount > 0 &&
+            portraitPhotoShape &&
+            documentLikeScore < 0.48
+        ) ||
+        (
+            !faceDetectionAvailable &&
+            photoHeuristic
+        );
+
+    /*
+     * Score calculation.
+     *
+     * This is a visual screening score,
+     * not a legal authenticity score.
+     */
+    let score = 8;
+
+    const issues = [];
+    const positives = [];
+
+    /*
+     * Resolution.
+     */
+    if (
+        originalWidth < 600 ||
+        originalHeight < 400
+    ) {
+        score += 25;
+
+        issues.push(
+            `Very low image resolution detected (${originalWidth} × ${originalHeight}px).`
+        );
+    } else if (
+        originalWidth < 1000 ||
+        originalHeight < 700
+    ) {
+        score += 10;
+
+        issues.push(
+            `Limited image resolution detected (${originalWidth} × ${originalHeight}px).`
+        );
+    } else {
+        positives.push(
+            `Resolution is suitable for preliminary visual screening (${originalWidth} × ${originalHeight}px).`
+        );
+    }
+
+    /*
+     * Brightness.
+     */
+    if (brightness < 55) {
+        score += 18;
+
+        issues.push(
+            `Image is significantly dark (average brightness ${brightness.toFixed(1)}).`
+        );
+    } else if (brightness < 85) {
+        score += 7;
+
+        issues.push(
+            `Image is somewhat dark (average brightness ${brightness.toFixed(1)}).`
+        );
+    } else if (brightness > 220) {
+        score += 15;
+
+        issues.push(
+            `Image is heavily overexposed (average brightness ${brightness.toFixed(1)}).`
+        );
+    } else if (brightness > 195) {
+        score += 5;
+
+        issues.push(
+            `Image is brighter than normal (average brightness ${brightness.toFixed(1)}).`
+        );
+    } else {
+        positives.push(
+            `Brightness is within a usable range (${brightness.toFixed(1)}).`
+        );
+    }
+
+    /*
+     * Contrast.
+     */
+    if (contrast < 15) {
+        score += 15;
+
+        issues.push(
+            `Very low contrast may reduce text and boundary visibility (${contrast.toFixed(1)}).`
+        );
+    } else if (contrast < 25) {
+        score += 7;
+
+        issues.push(
+            `Moderate-low contrast detected (${contrast.toFixed(1)}).`
+        );
+    } else if (contrast > 95) {
+        score += 8;
+
+        issues.push(
+            `Very high contrast detected, which may hide fine document details (${contrast.toFixed(1)}).`
+        );
+    } else {
+        positives.push(
+            `Contrast supports preliminary text and boundary visibility (${contrast.toFixed(1)}).`
+        );
+    }
+
+    /*
+     * Aspect ratio.
+     */
+    if (
+        aspectRatio < 0.50 ||
+        aspectRatio > 2.60
+    ) {
+        score += 14;
+
+        issues.push(
+            `Unusual document proportions detected (aspect ratio ${aspectRatio.toFixed(2)}).`
+        );
+    } else if (
+        aspectRatio < 0.58 ||
+        aspectRatio > 2.30
+    ) {
+        score += 7;
+
+        issues.push(
+            `Document proportions are outside the common screening range (aspect ratio ${aspectRatio.toFixed(2)}).`
+        );
+    } else {
+        positives.push(
+            `Image proportions are compatible with a document-style capture (aspect ratio ${aspectRatio.toFixed(2)}).`
+        );
+    }
+
+    /*
+     * Edge structure.
+     */
+    if (edgeDensity < 0.025) {
+        score += 12;
+
+        issues.push(
+            "Very little edge structure was detected; document boundaries or text may be unclear."
+        );
+    } else if (edgeDensity > 0.55) {
+        score += 8;
+
+        issues.push(
+            "Very dense visual edges detected; the image may contain heavy background or visual noise."
+        );
+    } else {
+        positives.push(
+            "Text/document edge structure is detectable."
+        );
+    }
+
+    /*
+     * Excessive dark/bright regions.
+     */
+    if (darkRatio > 0.38) {
+        score += 8;
+
+        issues.push(
+            `Large dark regions detected (${(darkRatio * 100).toFixed(1)}% of sampled pixels).`
+        );
+    }
+
+    if (brightRatio > 0.55) {
+        score += 5;
+
+        issues.push(
+            `Large over-bright regions detected (${(brightRatio * 100).toFixed(1)}% of sampled pixels).`
+        );
+    }
+
+    /*
+     * Document boundary structure.
+     */
+    if (
+        landscapeDocumentShape &&
+        borderCenterDifference > 5
+    ) {
+        positives.push(
+            "Document-like boundary separation is visible between outer and center regions."
+        );
+    }
+
+    /*
+     * Color saturation.
+     */
+    if (
+        saturation > 0.55 &&
+        !detectedPersonPhoto
+    ) {
+        score += 5;
+
+        issues.push(
+            `High color saturation detected (${(saturation * 100).toFixed(1)}%), which may indicate a photographed or visually noisy document.`
+        );
+    }
+
+    /*
+     * Suspicious visual indicator:
+     * strong edge concentration.
+     */
+    if (
+        strongEdgeDensity > 0.18 &&
+        !detectedPersonPhoto
+    ) {
+        score += 6;
+
+        issues.push(
+            "Strong localized visual changes were detected; the image may need additional manual inspection."
+        );
+    }
+
+    /*
+     * Positive document indicators.
+     */
+    if (
+        landscapeDocumentShape &&
+        brightPaperRatio > 0.45
+    ) {
+        positives.push(
+            "Overall visual structure is compatible with a document image."
+        );
+    }
+
+    /*
+     * If the image looks like a person photo,
+     * do NOT convert it into a fake-document risk score.
+     */
+    if (detectedPersonPhoto) {
+        return {
+            type: "HUMAN_IMAGE",
+            score: null,
+            level: "INVALID INPUT",
+            recommendation:
+                "Please upload a proper document image such as an ID card, certificate, license, or other supported document.",
+            findings: [
+                "The uploaded image appears to be a person/selfie-style photograph rather than a document.",
+                faceDetectionAvailable && faceCount > 0
+                    ? `A human face was detected in the image (${faceCount} face${faceCount > 1 ? "s" : ""}).`
+                    : "The image has visual characteristics commonly associated with a personal photograph.",
+                "A person photograph should not be assigned a document authenticity risk score.",
+                "Please upload a clear JPG, JPEG, or PNG image of the document you want to screen."
+            ],
+            metrics: {
+                width: originalWidth,
+                height: originalHeight,
+                megapixels,
+                aspectRatio,
+                brightness,
+                contrast,
+                saturation,
+                edgeDensity,
+                faceCount,
+                faceDetectionAvailable,
+                documentLikeScore
+            }
+        };
+    }
+
+    /*
+     * Clamp final score.
+     */
+    score =
+        Math.round(
+            clamp(score, 5, 92)
+        );
+
+    /*
+     * Keep normal-looking documents in the lower range.
+     */
+    if (
+        documentLikeScore >= 0.70 &&
+        score > 30
+    ) {
+        score =
+            Math.min(
+                score,
+                30
+            );
+    }
 
     let level;
     let recommendationText;
-    let findings;
 
     if (score <= 25) {
         level = "LOW RISK";
 
         recommendationText =
-            "Proceed to standard verification.";
-
-        findings = [
-            "Document structure appears consistent.",
-            "No major visual anomalies detected.",
-            "Required document elements appear present.",
-            "No significant risk indicators identified."
-        ];
+            "Visual characteristics are suitable for standard verification. Continue with normal identity/document checks.";
     } else if (score <= 60) {
         level = "REVIEW REQUIRED";
 
         recommendationText =
-            "Perform additional verification.";
-
-        findings = [
-            "Some document elements require review.",
-            "Minor inconsistencies detected.",
-            "Additional validation is recommended.",
-            "Human verification should be considered."
-        ];
+            "Some visual quality or structural indicators require additional verification before accepting the document.";
     } else {
         level = "HIGH RISK";
 
         recommendationText =
-            "Manual verification strongly recommended.";
+            "Multiple visual indicators require detailed manual verification. Do not rely on this preliminary screening alone.";
+    }
 
-        findings = [
-            "Multiple suspicious indicators detected.",
-            "Document structure requires detailed review.",
-            "Potential authenticity concerns identified.",
-            "Manual verification is strongly recommended."
-        ];
+    /*
+     * Image-specific findings.
+     */
+    const findings = [];
+
+    issues.forEach(issue => {
+        if (
+            !findings.includes(issue) &&
+            findings.length < 5
+        ) {
+            findings.push(issue);
+        }
+    });
+
+    positives.forEach(positive => {
+        if (
+            !findings.includes(positive) &&
+            findings.length < 5
+        ) {
+            findings.push(positive);
+        }
+    });
+
+    /*
+     * Always give a useful result.
+     */
+    if (findings.length === 0) {
+        findings.push(
+            "No significant visual quality issue was detected in the uploaded image."
+        );
+
+        findings.push(
+            "Document-like image characteristics were observed during preliminary screening."
+        );
+    }
+
+    /*
+     * Add metrics when there is room.
+     */
+    if (findings.length < 5) {
+        findings.push(
+            `Image analysis measured ${originalWidth} × ${originalHeight}px with ${megapixels.toFixed(2)} MP resolution.`
+        );
     }
 
     return {
+        type: "DOCUMENT",
         score,
         level,
         recommendation: recommendationText,
-        findings
+        findings,
+        metrics: {
+            width: originalWidth,
+            height: originalHeight,
+            megapixels,
+            aspectRatio,
+            brightness,
+            contrast,
+            saturation,
+            darkRatio,
+            brightRatio,
+            colorfulRatio,
+            skinToneRatio,
+            edgeDensity,
+            strongEdgeDensity,
+            borderBrightness,
+            centerBrightness,
+            borderCenterDifference,
+            faceCount,
+            faceDetectionAvailable,
+            documentLikeScore,
+            documentShape:
+                landscapeDocumentShape
+                    ? "Landscape document"
+                    : portraitDocumentShape
+                        ? "Portrait / mixed"
+                        : "Unusual"
+        }
     };
 }
 
 /* =========================================================
-   FINISH ANALYSIS — EXISTING FLOW + NEW FEATURES
+   PDF ANALYSIS
+
+   No external PDF rendering library is required.
+   Therefore this is deliberately preliminary.
 ========================================================= */
 
-function finishAnalysis() {
-    const result = generateResult();
+function analyzePdfFile(file) {
+    const sizeMB =
+        file.size /
+        (1024 * 1024);
+
+    let score = 15;
+
+    const findings = [
+        "PDF file format detected successfully.",
+        "File metadata is available for preliminary screening.",
+        "The current frontend version does not render PDF pages into pixels.",
+        "Pixel-level visual analysis is therefore not applied to the PDF contents."
+    ];
+
+    if (sizeMB < 0.01) {
+        score += 15;
+
+        findings.push(
+            "The PDF is unusually small and may require additional manual inspection."
+        );
+    } else if (sizeMB > 25) {
+        score += 8;
+
+        findings.push(
+            `Large PDF size detected (${sizeMB.toFixed(2)} MB).`
+        );
+    } else {
+        findings.push(
+            `PDF size is ${sizeMB.toFixed(2)} MB.`
+        );
+    }
+
+    score =
+        clamp(
+            Math.round(score),
+            5,
+            45
+        );
+
+    let level;
+
+    if (score <= 25) {
+        level = "LOW RISK";
+    } else {
+        level = "REVIEW REQUIRED";
+    }
+
+    return {
+        type: "PDF",
+        score,
+        level,
+        recommendation:
+            "The PDF passed basic file-level screening. For authenticity, page-level document validation and manual verification are recommended.",
+        findings,
+        metrics: {
+            fileSizeMB: sizeMB,
+            pixelAnalysis: false
+        }
+    };
+}
+
+/* =========================================================
+   GENERATE RESULT
+
+   IMPORTANT:
+   This is now asynchronous because JPG/PNG images
+   are actually analyzed before generating the result.
+========================================================= */
+
+async function generateResult() {
+    if (!selectedFile) {
+        return {
+            type: "INVALID",
+            score: null,
+            level: "INVALID INPUT",
+            recommendation:
+                "Please select a supported document.",
+            findings: [
+                "No document was selected for screening."
+            ],
+            metrics: {}
+        };
+    }
+
+    try {
+        if (isImageFile(selectedFile)) {
+            return await analyzeImagePixels(
+                selectedFile
+            );
+        }
+
+        if (isPdfFile(selectedFile)) {
+            return analyzePdfFile(
+                selectedFile
+            );
+        }
+
+        return {
+            type: "INVALID",
+            score: null,
+            level: "INVALID INPUT",
+            recommendation:
+                "Please upload a PDF, JPG, JPEG, or PNG document.",
+            findings: [
+                "Unsupported file type."
+            ],
+            metrics: {}
+        };
+    } catch (error) {
+        console.error(
+            "IDENTIS analysis error:",
+            error
+        );
+
+        return {
+            type: "ERROR",
+            score: null,
+            level: "ANALYSIS ERROR",
+            recommendation:
+                "The image could not be analyzed. Please upload a clear JPG, JPEG, or PNG document and try again.",
+            findings: [
+                "The browser could not decode or process the uploaded image.",
+                "Please make sure the file is not corrupted.",
+                "Try uploading a clear document image again."
+            ],
+            metrics: {}
+        };
+    }
+}
+
+/* =========================================================
+   FINISH ANALYSIS
+========================================================= */
+
+async function finishAnalysis() {
+    let result;
+
+    try {
+        result =
+            await generateResult();
+    } catch (error) {
+        console.error(error);
+
+        result = {
+            type: "ERROR",
+            score: null,
+            level: "ANALYSIS ERROR",
+            recommendation:
+                "Unable to complete image analysis.",
+            findings: [
+                "The screening process encountered an unexpected error."
+            ],
+            metrics: {}
+        };
+    }
 
     latestResult = result;
     latestScanTime = new Date();
@@ -1135,9 +2221,14 @@ function finishAnalysis() {
     setTimeout(
         () => {
             if (resultPanel) {
-                resultPanel.classList.remove("hidden");
+                resultPanel.classList.remove(
+                    "hidden"
+                );
             }
 
+            /*
+             * Risk badge.
+             */
             if (riskBadge) {
                 riskBadge.textContent =
                     result.level;
@@ -1145,12 +2236,15 @@ function finishAnalysis() {
                 riskBadge.className =
                     "risk-badge";
 
-                if (result.level === "LOW RISK") {
+                if (
+                    result.level === "LOW RISK"
+                ) {
                     riskBadge.classList.add(
                         "low"
                     );
                 } else if (
-                    result.level === "REVIEW REQUIRED"
+                    result.level ===
+                    "REVIEW REQUIRED"
                 ) {
                     riskBadge.classList.add(
                         "medium"
@@ -1162,9 +2256,19 @@ function finishAnalysis() {
                 }
             }
 
+            /*
+             * Score.
+             *
+             * Human photo / invalid input:
+             * display — instead of a fake risk number.
+             */
             if (riskScore) {
                 riskScore.textContent =
-                    result.score;
+                    result.score === null ||
+                    typeof result.score ===
+                        "undefined"
+                        ? "—"
+                        : result.score;
             }
 
             if (resultFile) {
@@ -1179,48 +2283,117 @@ function finishAnalysis() {
                     result.recommendation;
             }
 
+            /*
+             * Findings.
+             */
             if (findingsList) {
                 findingsList.innerHTML = "";
 
                 result.findings.forEach(
                     finding => {
                         const li =
-                            document.createElement("li");
+                            document.createElement(
+                                "li"
+                            );
 
-                        li.textContent = finding;
+                        li.textContent =
+                            finding;
 
-                        findingsList.appendChild(li);
+                        findingsList.appendChild(
+                            li
+                        );
                     }
                 );
             }
 
-            if (documentStatus) {
-                documentStatus.textContent =
-                    "VERIFIED";
-            }
+            /*
+             * Status handling.
+             */
+            if (
+                result.type ===
+                "HUMAN_IMAGE"
+            ) {
+                if (documentStatus) {
+                    documentStatus.textContent =
+                        "INPUT REJECTED";
+                }
 
-            if (ocrStatus) {
-                ocrStatus.textContent =
-                    "COMPLETE";
-            }
+                if (ocrStatus) {
+                    ocrStatus.textContent =
+                        "NOT A DOCUMENT";
+                }
 
-            if (riskStatus) {
-                riskStatus.textContent =
-                    "ANALYZED";
-            }
+                if (riskStatus) {
+                    riskStatus.textContent =
+                        "NOT APPLICABLE";
+                }
 
-            if (finalStatus) {
-                finalStatus.textContent =
-                    "COMPLETED";
+                if (finalStatus) {
+                    finalStatus.textContent =
+                        "DOCUMENT REQUIRED";
+                }
+
+                updateDocumentDetails(
+                    "INVALID INPUT — DOCUMENT REQUIRED"
+                );
+            } else if (
+                result.type ===
+                "ERROR"
+            ) {
+                if (documentStatus) {
+                    documentStatus.textContent =
+                        "ANALYSIS ERROR";
+                }
+
+                if (ocrStatus) {
+                    ocrStatus.textContent =
+                        "FAILED";
+                }
+
+                if (riskStatus) {
+                    riskStatus.textContent =
+                        "NOT COMPLETED";
+                }
+
+                if (finalStatus) {
+                    finalStatus.textContent =
+                        "RETRY REQUIRED";
+                }
+
+                updateDocumentDetails(
+                    "ANALYSIS ERROR"
+                );
+            } else {
+                if (documentStatus) {
+                    documentStatus.textContent =
+                        "VERIFIED";
+                }
+
+                if (ocrStatus) {
+                    ocrStatus.textContent =
+                        result.type === "PDF"
+                            ? "FILE ANALYSIS"
+                            : "PIXEL ANALYSIS";
+                }
+
+                if (riskStatus) {
+                    riskStatus.textContent =
+                        "ANALYZED";
+                }
+
+                if (finalStatus) {
+                    finalStatus.textContent =
+                        "COMPLETED";
+                }
+
+                updateDocumentDetails(
+                    "SCREENING COMPLETED"
+                );
             }
 
             if (analyzeBtn) {
                 analyzeBtn.disabled = false;
             }
-
-            updateDocumentDetails(
-                "SCREENING COMPLETED"
-            );
 
             showSecurityIndicator();
 
@@ -1230,6 +2403,9 @@ function finishAnalysis() {
                 );
             }
 
+            /*
+             * Save the ACTUAL result.
+             */
             saveToHistory(result);
 
             if (resultPanel) {
@@ -1244,7 +2420,7 @@ function finishAnalysis() {
 }
 
 /* =========================================================
-   ANALYZE BUTTON — EXISTING
+   ANALYZE BUTTON
 ========================================================= */
 
 if (analyzeBtn) {
@@ -1259,12 +2435,16 @@ if (analyzeBtn) {
 ========================================================= */
 
 function downloadVerificationReport() {
-    if (!selectedFile || !latestResult) {
+    if (
+        !selectedFile ||
+        !latestResult
+    ) {
         return;
     }
 
     const scanDate =
-        latestScanTime || new Date();
+        latestScanTime ||
+        new Date();
 
     const findingsText =
         latestResult.findings
@@ -1273,6 +2453,118 @@ function downloadVerificationReport() {
                     `${index + 1}. ${finding}`
             )
             .join("\n");
+
+    const scoreText =
+        latestResult.score === null ||
+        typeof latestResult.score ===
+            "undefined"
+            ? "NOT APPLICABLE"
+            : `${latestResult.score}/100`;
+
+    let metricsText =
+        "No image metrics available.";
+
+    if (
+        latestResult.metrics &&
+        latestResult.type ===
+            "DOCUMENT"
+    ) {
+        const m =
+            latestResult.metrics;
+
+        metricsText = `
+Resolution:
+${m.width} × ${m.height}px
+
+Megapixels:
+${m.megapixels.toFixed(2)} MP
+
+Aspect Ratio:
+${m.aspectRatio.toFixed(2)}
+
+Brightness:
+${m.brightness.toFixed(2)}
+
+Contrast:
+${m.contrast.toFixed(2)}
+
+Saturation:
+${m.saturation.toFixed(2)}
+
+Edge Density:
+${m.edgeDensity.toFixed(3)}
+
+Document Shape:
+${m.documentShape || "—"}
+
+Document-Like Score:
+${m.documentLikeScore.toFixed(2)}
+
+Face Detection:
+${
+    m.faceDetectionAvailable
+        ? `Available — ${m.faceCount} detected`
+        : "Browser face detector unavailable; heuristic analysis used"
+}
+`.trim();
+    }
+
+    if (
+        latestResult.type ===
+        "HUMAN_IMAGE"
+    ) {
+        const m =
+            latestResult.metrics ||
+            {};
+
+        metricsText = `
+Resolution:
+${m.width || "—"} × ${m.height || "—"}px
+
+Megapixels:
+${
+    typeof m.megapixels ===
+    "number"
+        ? m.megapixels.toFixed(2)
+        : "—"
+} MP
+
+Aspect Ratio:
+${
+    typeof m.aspectRatio ===
+    "number"
+        ? m.aspectRatio.toFixed(2)
+        : "—"
+}
+
+Brightness:
+${
+    typeof m.brightness ===
+    "number"
+        ? m.brightness.toFixed(2)
+        : "—"
+}
+
+Contrast:
+${
+    typeof m.contrast ===
+    "number"
+        ? m.contrast.toFixed(2)
+        : "—"
+}
+
+Detected Faces:
+${
+    typeof m.faceCount ===
+    "number"
+        ? m.faceCount
+        : "—"
+}
+
+Input Classification:
+PERSON / NON-DOCUMENT IMAGE
+`.trim();
+    }
 
     const report = `
 ============================================================
@@ -1300,7 +2592,9 @@ Last Modified:
 ${
     selectedFile.lastModified
         ? formatDateTime(
-            new Date(selectedFile.lastModified)
+            new Date(
+                selectedFile.lastModified
+            )
         )
         : "Not available"
 }
@@ -1310,7 +2604,7 @@ SCREENING RESULT
 ------------------------------------------------------------
 
 Risk Score:
-${latestResult.score}/100
+${scoreText}
 
 Risk Level:
 ${latestResult.level}
@@ -1318,11 +2612,14 @@ ${latestResult.level}
 Recommendation:
 ${latestResult.recommendation}
 
-OCR Status:
-COMPLETE
+Analysis Type:
+${latestResult.type}
 
-AI Screening:
-COMPLETED
+------------------------------------------------------------
+IMAGE / FILE ANALYSIS
+------------------------------------------------------------
+
+${metricsText}
 
 ------------------------------------------------------------
 SCREENING FINDINGS
@@ -1340,19 +2637,22 @@ LOCAL FRONTEND DEMO
 Server Upload:
 NOT CONFIGURED
 
-The current IDENTIS demonstration performs the
-screening simulation locally in the browser.
+The current IDENTIS demonstration performs
+the analysis locally in the browser.
 
 ------------------------------------------------------------
 IMPORTANT NOTICE
 ------------------------------------------------------------
 
-This report represents a preliminary simulated
-screening result from the IDENTIS frontend demo.
+This report represents a preliminary visual/file
+screening result from the IDENTIS frontend demonstration.
 
-It does not establish the legal authenticity,
-validity, ownership, or genuineness of the uploaded
-document.
+The risk score is based on browser-side image/file
+characteristics and does not establish legal authenticity,
+validity, ownership, or genuineness.
+
+A person/selfie image is treated as invalid input and
+does not receive a document authenticity risk score.
 
 High-risk or suspicious documents should be subjected
 to appropriate human/manual verification.
@@ -1362,18 +2662,24 @@ to appropriate human/manual verification.
 ============================================================
 `.trim();
 
-    const blob = new Blob(
-        [report],
-        {
-            type: "text/plain;charset=utf-8"
-        }
-    );
+    const blob =
+        new Blob(
+            [report],
+            {
+                type:
+                    "text/plain;charset=utf-8"
+            }
+        );
 
     const url =
-        URL.createObjectURL(blob);
+        URL.createObjectURL(
+            blob
+        );
 
     const link =
-        document.createElement("a");
+        document.createElement(
+            "a"
+        );
 
     const safeBaseName =
         selectedFile.name
@@ -1399,22 +2705,28 @@ to appropriate human/manual verification.
     link.download =
         `IDENTIS_Verification_Report_${safeBaseName}_${timestamp}.txt`;
 
-    document.body.appendChild(link);
+    document.body.appendChild(
+        link
+    );
 
     link.click();
 
-    document.body.removeChild(link);
+    document.body.removeChild(
+        link
+    );
 
     setTimeout(
         () => {
-            URL.revokeObjectURL(url);
+            URL.revokeObjectURL(
+                url
+            );
         },
         1000
     );
 }
 
 /* =========================================================
-   SCREENING HISTORY — LOCAL STORAGE
+   SCREENING HISTORY
 ========================================================= */
 
 function getHistory() {
@@ -1446,10 +2758,15 @@ function getHistory() {
 
 /* =========================================================
    SAVE HISTORY
+
+   Stores the actual calculated result.
 ========================================================= */
 
 function saveToHistory(result) {
-    if (!selectedFile || !result) {
+    if (
+        !selectedFile ||
+        !result
+    ) {
         return;
     }
 
@@ -1457,30 +2774,52 @@ function saveToHistory(result) {
         getHistory();
 
     const record = {
-        fileName: selectedFile.name,
+        fileName:
+            selectedFile.name,
+
         fileType:
             getReadableFileType(
                 selectedFile
             ),
+
         fileSize:
             formatFileSize(
                 selectedFile.size
             ),
-        score: result.score,
-        level: result.level,
+
+        score:
+            result.score,
+
+        level:
+            result.level,
+
+        type:
+            result.type,
+
         recommendation:
             result.recommendation,
+
+        findings:
+            Array.isArray(
+                result.findings
+            )
+                ? result.findings
+                : [],
+
+        metrics:
+            result.metrics || {},
+
         timestamp:
             new Date().toISOString()
     };
 
     history.unshift(record);
 
-    /*
-     * Keep latest 10 screening records.
-     */
     const limitedHistory =
-        history.slice(0, 10);
+        history.slice(
+            0,
+            10
+        );
 
     try {
         localStorage.setItem(
@@ -1534,96 +2873,148 @@ function renderHistory() {
         "hidden"
     );
 
-    history.forEach(record => {
-        const item =
-            document.createElement("div");
+    history.forEach(
+        record => {
+            const item =
+                document.createElement(
+                    "div"
+                );
 
-        item.className =
-            "identis-history-item";
+            item.className =
+                "identis-history-item";
 
-        const left =
-            document.createElement("div");
+            const left =
+                document.createElement(
+                    "div"
+                );
 
-        const name =
-            document.createElement("div");
+            const name =
+                document.createElement(
+                    "div"
+                );
 
-        name.className =
-            "identis-history-name";
+            name.className =
+                "identis-history-name";
 
-        name.textContent =
-            record.fileName || "Unknown document";
+            name.textContent =
+                record.fileName ||
+                "Unknown document";
 
-        const meta =
-            document.createElement("div");
+            const meta =
+                document.createElement(
+                    "div"
+                );
 
-        meta.className =
-            "identis-history-meta";
+            meta.className =
+                "identis-history-meta";
 
-        const recordDate =
-            record.timestamp
-                ? formatDateTime(
-                    new Date(
-                        record.timestamp
+            const recordDate =
+                record.timestamp
+                    ? formatDateTime(
+                        new Date(
+                            record.timestamp
+                        )
                     )
-                )
-                : "Unknown time";
+                    : "Unknown time";
 
-        meta.textContent =
-            `${record.fileType || "File"} • ${
-                record.fileSize || "Unknown size"
-            } • ${recordDate}`;
+            meta.textContent =
+                `${record.fileType || "File"} • ${
+                    record.fileSize ||
+                    "Unknown size"
+                } • ${recordDate}`;
 
-        left.appendChild(name);
-        left.appendChild(meta);
-
-        const right =
-            document.createElement("div");
-
-        right.className =
-            "identis-history-right";
-
-        const score =
-            document.createElement("div");
-
-        score.className =
-            "identis-history-score";
-
-        score.textContent =
-            `${record.score}/100`;
-
-        const risk =
-            document.createElement("span");
-
-        risk.className =
-            "identis-history-risk";
-
-        if (record.level === "LOW RISK") {
-            risk.classList.add(
-                "identis-risk-low"
+            left.appendChild(
+                name
             );
-        } else if (
-            record.level === "REVIEW REQUIRED"
-        ) {
-            risk.classList.add(
-                "identis-risk-review"
+
+            left.appendChild(
+                meta
             );
-        } else {
-            risk.classList.add(
-                "identis-risk-high"
+
+            const right =
+                document.createElement(
+                    "div"
+                );
+
+            right.className =
+                "identis-history-right";
+
+            const score =
+                document.createElement(
+                    "div"
+                );
+
+            score.className =
+                "identis-history-score";
+
+            score.textContent =
+                record.score ===
+                    null ||
+                typeof record.score ===
+                    "undefined"
+                    ? "—"
+                    : `${record.score}/100`;
+
+            const risk =
+                document.createElement(
+                    "span"
+                );
+
+            risk.className =
+                "identis-history-risk";
+
+            if (
+                record.level ===
+                "LOW RISK"
+            ) {
+                risk.classList.add(
+                    "identis-risk-low"
+                );
+            } else if (
+                record.level ===
+                "REVIEW REQUIRED"
+            ) {
+                risk.classList.add(
+                    "identis-risk-review"
+                );
+            } else if (
+                record.level ===
+                "INVALID INPUT"
+            ) {
+                risk.classList.add(
+                    "identis-history-invalid"
+                );
+            } else {
+                risk.classList.add(
+                    "identis-risk-high"
+                );
+            }
+
+            risk.textContent =
+                record.level ||
+                "UNKNOWN";
+
+            right.appendChild(
+                score
+            );
+
+            right.appendChild(
+                risk
+            );
+
+            item.appendChild(
+                left
+            );
+
+            item.appendChild(
+                right
+            );
+
+            historyList.appendChild(
+                item
             );
         }
-
-        risk.textContent =
-            record.level || "UNKNOWN";
-
-        right.appendChild(score);
-        right.appendChild(risk);
-
-        item.appendChild(left);
-        item.appendChild(right);
-
-        historyList.appendChild(item);
-    });
+    );
 }
 
 /* =========================================================
@@ -1643,7 +3034,9 @@ function resetForNewDocument() {
     }
 
     if (fileInfo) {
-        fileInfo.classList.add("hidden");
+        fileInfo.classList.add(
+            "hidden"
+        );
     }
 
     if (analyzeBtn) {
@@ -1696,7 +3089,7 @@ function resetForNewDocument() {
 }
 
 /* =========================================================
-   NAVIGATION ACTIVE STATE — EXISTING
+   NAVIGATION ACTIVE STATE
 ========================================================= */
 
 const navLinks =
@@ -1714,75 +3107,91 @@ window.addEventListener(
     () => {
         let current = "";
 
-        sections.forEach(section => {
-            const sectionTop =
-                section.offsetTop - 160;
+        sections.forEach(
+            section => {
+                const sectionTop =
+                    section.offsetTop -
+                    160;
 
-            if (
-                window.scrollY >=
-                sectionTop
-            ) {
-                current =
-                    section.getAttribute(
-                        "id"
-                    );
+                if (
+                    window.scrollY >=
+                    sectionTop
+                ) {
+                    current =
+                        section.getAttribute(
+                            "id"
+                        );
+                }
             }
-        });
+        );
 
-        navLinks.forEach(link => {
-            link.classList.remove(
-                "active"
-            );
-
-            const href =
-                link.getAttribute("href");
-
-            if (
-                href === `#${current}`
-            ) {
-                link.classList.add(
+        navLinks.forEach(
+            link => {
+                link.classList.remove(
                     "active"
                 );
+
+                const href =
+                    link.getAttribute(
+                        "href"
+                    );
+
+                if (
+                    href ===
+                    `#${current}`
+                ) {
+                    link.classList.add(
+                        "active"
+                    );
+                }
             }
-        });
+        );
     }
 );
 
 /* =========================================================
-   NAVIGATION CLICK — EXISTING
+   NAVIGATION CLICK
 ========================================================= */
 
-navLinks.forEach(link => {
-    link.addEventListener(
-        "click",
-        () => {
-            navLinks.forEach(item => {
-                item.classList.remove(
+navLinks.forEach(
+    link => {
+        link.addEventListener(
+            "click",
+            () => {
+                navLinks.forEach(
+                    item => {
+                        item.classList.remove(
+                            "active"
+                        );
+                    }
+                );
+
+                link.classList.add(
                     "active"
                 );
-            });
-
-            link.classList.add(
-                "active"
-            );
-        }
-    );
-});
+            }
+        );
+    }
+);
 
 /* =========================================================
-   INTERSECTION OBSERVER — EXISTING
+   INTERSECTION OBSERVER
 ========================================================= */
 
 const observer =
     new IntersectionObserver(
         entries => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add(
-                        "visible"
-                    );
+            entries.forEach(
+                entry => {
+                    if (
+                        entry.isIntersecting
+                    ) {
+                        entry.target.classList.add(
+                            "visible"
+                        );
+                    }
                 }
-            });
+            );
         },
         {
             threshold: 0.15
@@ -1793,12 +3202,16 @@ document
     .querySelectorAll(
         ".tech-card, .impact-card, .workflow-step, .feasibility-card"
     )
-    .forEach(element => {
-        observer.observe(element);
-    });
+    .forEach(
+        element => {
+            observer.observe(
+                element
+            );
+        }
+    );
 
 /* =========================================================
-   CTRL + U — EXISTING
+   CTRL + U
 ========================================================= */
 
 document.addEventListener(
@@ -1806,7 +3219,8 @@ document.addEventListener(
     event => {
         if (
             event.ctrlKey &&
-            event.key.toLowerCase() === "u"
+            event.key.toLowerCase() ===
+                "u"
         ) {
             event.preventDefault();
 
@@ -1839,6 +3253,6 @@ console.log(
 );
 
 console.log(
-    "%cFrontend demonstration mode active.",
+    "%cFrontend image-analysis demonstration mode active.",
     "color:#63f2b1;font-size:11px;"
 );
